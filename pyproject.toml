@@ -1,0 +1,41 @@
+[tool.pyright]
+executionEnvironments = [
+  { root = "./", extraPaths = [ "src" ]  }
+]
+
+[tool.black]
+line-length = 79
+
+[tool.isort]
+line_length = 79
+profile = "black"
+
+[tool.ruff]
+line-length = 79
+lint.fixable = ["ALL"]
+
+[tool.coverage.report]
+exclude_lines= [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    ]
+
+omit = [
+    "*/__init__.py",
+    ]
+
+[tool.coverage.run]
+source = ["src/*"]
+
+omit = [
+    "*/__init__.py",
+    ]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+python_files = [
+    "tests.py",
+    "test_*.py",
+    "*_tests.py",
+    ]
