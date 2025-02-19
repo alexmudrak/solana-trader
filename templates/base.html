@@ -10,8 +10,8 @@
             <script src="https://unpkg.com/htmx.org@2.0.4"></script>
         {% endblock %}
     </head>
-    <body class="bg-gray-100">
-        <div class="max-w-4xl mx-auto p-6">
+    <body class="bg-gray-100 flex flex-col min-h-screen">
+        <div class="max-w-6xl mx-auto w-full p-6 flex-grow"">
             <div class="bg-white p-6 rounded-lg shadow-md">
                 {% block content %}{% endblock %}
             </div>

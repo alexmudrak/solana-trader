@@ -20,16 +20,23 @@
         <option value="">Select Token</option>
     </select>
     <div id="chart-container" class="mt-6">
-        <canvas id="priceChart" width="400" height="200" class="w-full"></canvas>
+        <canvas id="priceChart"
+                width="400"
+                height="200"
+                class="w-full"
+                style="display:none"></canvas>
     </div>
-    <div class="mt-4 flex justify-center space-x-2">
+    <div class="mt-4 text-center" id="price-container" style="display:none">
+        <span id="current-price" class="text-xl font-bold"></span>
+    </div>
+    <div class="mt-4 flex justify-center space-x-2"
+         id="buttons-container"
+         style="display:none">
         <button id="buy-button"
-                class="w-1/2 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition">
-            BUY
-        </button>
+                class="w-1/2 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
+                disabled>BUY</button>
         <button id="sell-button"
-                class="w-1/2 px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition">
-            SELL
-        </button>
+                class="w-1/2 px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition"
+                disabled>SELL</button>
     </div>
 {% endblock %}
