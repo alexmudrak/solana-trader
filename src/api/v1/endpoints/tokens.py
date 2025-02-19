@@ -10,8 +10,14 @@ router = APIRouter()
 
 
 @router.get("/", response_class=JSONResponse)
-async def get_tokens():
-    pass
+async def get_tokens(
+    db_session: AsyncSession = Depends(get_session),
+):
+    result = await db_session.execute(select(Price.token_name).distinct())
+
+    tokens = result.scalars().all()
+
+    return {"tokens": tokens}
 
 
 @router.get("/prices/{token_name}", response_class=JSONResponse)
