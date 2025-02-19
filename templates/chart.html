@@ -3,11 +3,33 @@
     {{ super() }}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/chart.js"></script>
+    <style>
+    #priceChart {
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    </style>
 {% endblock %}
 {% block content %}
-    <h1>Token Chart update</h1>
-
-    <div id="chart-container">
-        <canvas id="priceChart" width="400" height="200"></canvas>
+    <h1 class="text-3xl font-bold mb-4">Token Chart Update</h1>
+    <label for="token-select" class="block text-lg font-medium text-gray-700">Select Token / USDC:</label>
+    <select id="token-select"
+            onchange="updateChart()"
+            class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+        <option value="">Select Token</option>
+    </select>
+    <div id="chart-container" class="mt-6">
+        <canvas id="priceChart" width="400" height="200" class="w-full"></canvas>
+    </div>
+    <div class="mt-4 flex justify-center space-x-2">
+        <button id="buy-button"
+                class="w-1/2 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition">
+            BUY
+        </button>
+        <button id="sell-button"
+                class="w-1/2 px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition">
+            SELL
+        </button>
     </div>
 {% endblock %}
