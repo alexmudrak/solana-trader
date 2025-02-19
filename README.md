@@ -1,1 +1,1 @@
-# solana_trader
+# Solana Trader

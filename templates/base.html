@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+    {% block head %}
+    <title>Token chart</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    {% endblock %}
+  </head>
+<body>
+    <div id="content">{% block content %}{% endblock %}</div>
+    <div id="footer">
+        {% block footer %}
+        &copy; Copyright 2025 by <a href="#">solana trade</a>.
+        {% endblock %}
+    </div>
+</body>
+</html>
