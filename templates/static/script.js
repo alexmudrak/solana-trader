@@ -20,7 +20,10 @@ async function fetchPrices(token) {
     const response = await fetch(`/api/v1/tokens/prices/${token}`)
     return await response.json()
 }
-
+async function fetchOrders(token) {
+    const response = await fetch(`/api/v1/tokens/orders/${token}`)
+    return await response.json()
+}
 async function renderChart() {
     if (!selectedToken) {
         console.warn('No token selected')
@@ -101,24 +104,54 @@ function updatePriceDisplay(currentPrice) {
     previousPrice = currentPrice
 
     const buyButton = document.getElementById('buy-button')
-    const sellButton = document.getElementById('sell-button')
     buyButton.disabled = false
-    sellButton.disabled = false
 }
 function updateChart() {
     const tokenSelect = document.getElementById('token-select')
     selectedToken = tokenSelect.value
     if (selectedToken) {
         renderChart()
+        randerTable()
         document.getElementById('buy-button').disabled = false
-        document.getElementById('sell-button').disabled = false
     } else {
         document.getElementById('priceChart').style.display = 'none'
         document.getElementById('price-container').style.display = 'none'
         document.getElementById('buttons-container').style.display = 'none'
         document.getElementById('buy-button').disabled = true
-        document.getElementById('sell-button').disabled = true
     }
+}
+
+async function randerTable() {
+    if (!selectedToken) {
+        console.warn('No token selected')
+        return
+    }
+    const data = await fetchOrders(selectedToken)
+
+    const tbody = document.getElementById('data-body')
+    tbody.innerHTML = ''
+    data.forEach((row) => {
+        const tr = document.createElement('tr')
+        let actionCell
+        if (row.action === 'BUY') {
+            actionCell = `
+                <td class="border-b px-4 py-2">
+
+                    <button class="w-1/2 px-4 py-2 ml-1 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition">SELL</button>
+                </td>
+            `
+        } else {
+            actionCell = `<td class="border-b px-4 py-2">CLOSE</td>`
+        }
+        tr.innerHTML = `
+            <td class="border-b px-4 py-2">${row.date}</td>
+            <td class="border-b px-4 py-2">${row.token}</td>
+            <td class="border-b px-4 py-2">${row.count}</td>
+            <td class="border-b px-4 py-2">${row.price}</td>
+            ${actionCell}
+        `
+        tbody.appendChild(tr)
+    })
 }
 
 function startAutoUpdate() {
@@ -126,6 +159,7 @@ function startAutoUpdate() {
     setInterval(() => {
         if (selectedToken) {
             renderChart()
+            randerTable()
         }
     }, 5000)
 }

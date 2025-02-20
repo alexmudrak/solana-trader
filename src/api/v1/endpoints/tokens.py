@@ -96,3 +96,41 @@ async def sell_tokens(
         "amount": order.amount,
         "price": order.price,
     }
+
+
+@router.get("/orders/{token_name}", response_class=JSONResponse)
+async def get_orders(
+    token_name: str,
+    db_session: AsyncSession = Depends(get_session),
+):
+    result = await db_session.execute(
+        select(Order)
+        .where(
+            (
+                (Order.to_token == token_name)
+                & (Order.action == OrderAction.BUY.value)
+            )
+            | (
+                (Order.from_token == token_name)
+                & (Order.action == OrderAction.SELL.value)
+            )
+        )
+        .order_by(Order.created.desc())
+    )
+    orders_data = result.scalars().all()
+    if not orders_data:
+        raise HTTPException(
+            status_code=404,
+            detail="Orders not found",
+        )
+    result = [
+        {
+            "date": order.created,
+            "token": order.to_token,
+            "count": order.amount,
+            "price": order.price,
+            "action": order.action,
+        }
+        for order in orders_data
+    ]
+    return result

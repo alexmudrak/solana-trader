@@ -35,22 +35,6 @@
     <div class="mt-4 flex flex-col items-center space-y-4"
          id="buttons-container"
          style="display:none">
-        <div class="w-full flex justify-between">
-            <button id="buy-button"
-                    class="w-1/2 px-4 py-2 mr-1 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
-                    disabled
-                    hx-post="/api/v1/tokens/buy"
-                    hx-ext='json-enc'
-                    hx-include="#amount, #token-select, #current-price-value"
-                    hx-target="#message">BUY</button>
-            <button id="sell-button"
-                    class="w-1/2 px-4 py-2 ml-1 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition"
-                    disabled
-                    hx-post="/api/v1/tokens/sell"
-                    hx-ext='json-enc'
-                    hx-include="#amount, #token-select, #current-price-value"
-                    hx-target="#message">SELL</button>
-        </div>
         <label for="amount" class="block text-lg font-medium text-gray-700">Amount:</label>
         <input type="number"
                id="amount"
@@ -62,7 +46,30 @@
                name="current-price-value"
                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                placeholder="Enter amount"
-                />
+               style="display:none" />
+        <div class="w-full flex justify-between">
+            <button id="buy-button"
+                    class="w-full px-4 py-2 mr-1 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
+                    disabled
+                    hx-post="/api/v1/tokens/buy"
+                    hx-ext='json-enc'
+                    hx-include="#amount, #token-select, #current-price-value"
+                    hx-target="#message">BUY</button>
+        </div>
         <div id="message" class="mt-4 text-center"></div>
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="border-b-2 px-4 py-2">Date</th>
+                    <th class="border-b-2 px-4 py-2">Token</th>
+                    <th class="border-b-2 px-4 py-2">Count</th>
+                    <th class="border-b-2 px-4 py-2">Price</th>
+                    <th class="border-b-2 px-4 py-2">Action</th>
+                </tr>
+            </thead>
+            <tbody id="data-body">
+                <!-- Здесь будут добавляться новые строки с данными -->
+            </tbody>
+        </table>
     </div>
 {% endblock %}
