@@ -59,10 +59,13 @@ async function renderChart() {
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'minute',
+                            unit: 'hour',
                             displayFormats: {
-                                minute: 'H:mm:ss'
-                                }
+                                hour: 'H:mm:ss',
+                            },
+                        },
+                        ticks: {
+                            maxTicksLimit: 24,
                         },
                     },
                 },
@@ -76,6 +79,9 @@ async function renderChart() {
 }
 function updatePriceDisplay(currentPrice) {
     const priceDisplay = document.getElementById('current-price')
+    const priceInput = document.getElementById('current-price-value')
+
+    priceInput.value = currentPrice
 
     const formattedCurrentPrice = currentPrice.toFixed(2)
 

@@ -41,14 +41,14 @@
                     disabled
                     hx-post="/api/v1/tokens/buy"
                     hx-ext='json-enc'
-                    hx-include="#amount, #token-select"
+                    hx-include="#amount, #token-select, #current-price-value"
                     hx-target="#message">BUY</button>
             <button id="sell-button"
                     class="w-1/2 px-4 py-2 ml-1 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition"
                     disabled
                     hx-post="/api/v1/tokens/sell"
                     hx-ext='json-enc'
-                    hx-include="#amount, #token-select"
+                    hx-include="#amount, #token-select, #current-price-value"
                     hx-target="#message">SELL</button>
         </div>
         <label for="amount" class="block text-lg font-medium text-gray-700">Amount:</label>
@@ -57,6 +57,12 @@
                name="amount"
                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                placeholder="Enter amount" />
+        <input type="number"
+               id="current-price-value"
+               name="current-price-value"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+               placeholder="Enter amount"
+                />
         <div id="message" class="mt-4 text-center"></div>
     </div>
 {% endblock %}
