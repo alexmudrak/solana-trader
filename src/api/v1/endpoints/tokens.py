@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.constants import MAIN_TOKEN, OrderAction
 from core.database import get_session
-from models.prices_models import Order, Price
-from schemas.tokens_schemas import BuyTokensRequest
+from models.orders_models import OrderBuy, OrderSell
+from models.prices_models import Price
+from schemas.tokens_schemas import BuyTokensRequest, SellTokensRequest
 
 router = APIRouter()
 
@@ -54,10 +56,9 @@ async def buy_tokens(
     db_session: AsyncSession = Depends(get_session),
 ):
     async with db_session.begin():
-        order = Order(
+        order = OrderBuy(
             from_token=MAIN_TOKEN,
             to_token=request.token_select,
-            action=OrderAction.BUY.value,
             amount=request.amount,
             price=request.amount * request.price,
         )
@@ -65,6 +66,7 @@ async def buy_tokens(
         await db_session.flush()
 
     return {
+        "id": order.id,
         "status": "OK",
         "token": order.to_token,
         "action": OrderAction.BUY,
@@ -75,16 +77,16 @@ async def buy_tokens(
 
 @router.post("/sell", response_class=JSONResponse)
 async def sell_tokens(
-    request: BuyTokensRequest,
+    request: SellTokensRequest,
     db_session: AsyncSession = Depends(get_session),
 ):
     async with db_session.begin():
-        order = Order(
+        order = OrderSell(
             from_token=request.token_select,
             to_token=MAIN_TOKEN,
-            action=OrderAction.SELL.value,
             amount=request.amount,
             price=request.amount * request.price,
+            buy_order_id=request.order_id,
         )
         db_session.add(order)
         await db_session.flush()
@@ -104,18 +106,10 @@ async def get_orders(
     db_session: AsyncSession = Depends(get_session),
 ):
     result = await db_session.execute(
-        select(Order)
-        .where(
-            (
-                (Order.to_token == token_name)
-                & (Order.action == OrderAction.BUY.value)
-            )
-            | (
-                (Order.from_token == token_name)
-                & (Order.action == OrderAction.SELL.value)
-            )
-        )
-        .order_by(Order.created.desc())
+        select(OrderBuy)
+        .options(selectinload(OrderBuy.sells))
+        .where(OrderBuy.to_token == token_name)
+        .order_by(OrderBuy.created.desc())
     )
     orders_data = result.scalars().all()
     if not orders_data:
@@ -125,12 +119,14 @@ async def get_orders(
         )
     result = [
         {
+            "id": order.id,
             "date": order.created,
             "token": order.to_token,
             "count": order.amount,
             "price": order.price,
-            "action": order.action,
+            "sells": order.sells,
         }
         for order in orders_data
     ]
+
     return result

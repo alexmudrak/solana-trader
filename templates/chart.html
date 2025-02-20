@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block head %}
     {{ super() }}
+    <script src="/static/script.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-    <script src="/static/script.js"></script>
     <style>
     #priceChart {
         border: 1px solid #cccccc;
@@ -50,7 +50,6 @@
         <div class="w-full flex justify-between">
             <button id="buy-button"
                     class="w-full px-4 py-2 mr-1 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
-                    disabled
                     hx-post="/api/v1/tokens/buy"
                     hx-ext='json-enc'
                     hx-include="#amount, #token-select, #current-price-value"
@@ -64,6 +63,7 @@
                     <th class="border-b-2 px-4 py-2">Token</th>
                     <th class="border-b-2 px-4 py-2">Count</th>
                     <th class="border-b-2 px-4 py-2">Price</th>
+                    <th class="border-b-2 px-4 py-2">Profit</th>
                     <th class="border-b-2 px-4 py-2">Action</th>
                 </tr>
             </thead>

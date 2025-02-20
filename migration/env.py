@@ -8,11 +8,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from core.settings import settings
 from models import Base
-from models.prices_models import Order, Price
+from models.orders_models import OrderBuy, OrderSell
+from models.prices_models import Price
 
 _ = (
     Base,
-    Order,
+    OrderBuy,
+    OrderSell,
     Price,
 )
 # this is the Alembic Config object, which provides
