@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block head %}
     {{ super() }}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/static/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+    <script src="/static/script.js"></script>
     <style>
     #priceChart {
         border: 1px solid #cccccc;
@@ -15,6 +17,7 @@
     <h1 class="text-3xl font-bold mb-4">Token Chart Update</h1>
     <label for="token-select" class="block text-lg font-medium text-gray-700">Select Token / USDC:</label>
     <select id="token-select"
+            name="token-select"
             onchange="updateChart()"
             class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
         <option value="">Select Token</option>
@@ -29,14 +32,31 @@
     <div class="mt-4 text-center" id="price-container" style="display:none">
         <span id="current-price" class="text-xl font-bold"></span>
     </div>
-    <div class="mt-4 flex justify-center space-x-2"
+    <div class="mt-4 flex flex-col items-center space-y-4"
          id="buttons-container"
          style="display:none">
-        <button id="buy-button"
-                class="w-1/2 px-4 py-2 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
-                disabled>BUY</button>
-        <button id="sell-button"
-                class="w-1/2 px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition"
-                disabled>SELL</button>
+        <div class="w-full flex justify-between">
+            <button id="buy-button"
+                    class="w-1/2 px-4 py-2 mr-1 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
+                    disabled
+                    hx-post="/api/v1/tokens/buy"
+                    hx-ext='json-enc'
+                    hx-include="#amount, #token-select"
+                    hx-target="#message">BUY</button>
+            <button id="sell-button"
+                    class="w-1/2 px-4 py-2 ml-1 bg-red-500 text-white font-semibold rounded hover:bg-red-600 transition"
+                    disabled
+                    hx-post="/api/v1/tokens/sell"
+                    hx-ext='json-enc'
+                    hx-include="#amount, #token-select"
+                    hx-target="#message">SELL</button>
+        </div>
+        <label for="amount" class="block text-lg font-medium text-gray-700">Amount:</label>
+        <input type="number"
+               id="amount"
+               name="amount"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+               placeholder="Enter amount" />
+        <div id="message" class="mt-4 text-center"></div>
     </div>
 {% endblock %}

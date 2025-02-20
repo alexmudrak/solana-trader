@@ -1,12 +1,23 @@
-from sqlalchemy import Column, Float, Integer, Sequence, String
+from sqlalchemy import Float, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from models import Base
+from models.base import BaseAppModel
 
 
-class Price(Base):
+class Price(BaseAppModel):
     __tablename__ = "prices"
 
-    id = Column(Integer, Sequence("price_id_seq"), primary_key=True)
-    token_name = Column(String(50), nullable=False)
-    price = Column(Float)
-    timestamp = Column(String(50))
+    token_name: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )
+    price: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+
+class Order(BaseAppModel):
+    __tablename__ = "orders"
+
+    pass

@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 
 from brokers.jupiter_market import JupiterMarket
 from core.constants import Token
@@ -22,7 +22,7 @@ async def get_prices_background(from_token: Token, to_token: Token):
                 new_price = Price(
                     token_name=from_token.name,
                     price=price,
-                    timestamp=datetime.now().timestamp(),
+                    created=datetime.now(UTC),
                 )
                 session.add(new_price)
                 await session.commit()
