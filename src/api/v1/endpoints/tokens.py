@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -29,9 +31,14 @@ async def get_prices_data(
     token_name: str,
     db_session: AsyncSession = Depends(get_session),
 ):
+    time_ago = datetime.now(UTC) - timedelta(hours=2)
+
     result = await db_session.execute(
         select(Price)
-        .where(Price.token_name == token_name)
+        .where(
+            Price.token_name == token_name,
+            Price.created >= time_ago,
+        )
         .order_by(Price.created)
     )
     prices_data = result.scalars().all()
@@ -120,7 +127,7 @@ async def get_orders(
     result = [
         {
             "id": order.id,
-            "date": order.created,
+            "created": order.created,
             "token": order.to_token,
             "count": order.amount,
             "price": order.price,
