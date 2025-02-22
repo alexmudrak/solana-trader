@@ -31,7 +31,7 @@ async def get_prices_data(
     token_name: str,
     db_session: AsyncSession = Depends(get_session),
 ):
-    time_ago = datetime.now(UTC) - timedelta(hours=2)
+    time_ago = datetime.now(UTC) - timedelta(hours=12)
 
     result = await db_session.execute(
         select(Price)

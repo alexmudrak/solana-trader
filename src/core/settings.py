@@ -22,5 +22,9 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
+    # Fetcher settings
+    app_fetch_price_sleep: int = 5
+    app_time_threshold: int = 5  # in minutes
+
 
 settings = Settings()

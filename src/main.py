@@ -5,18 +5,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from api.v1.routers import router as v1_api_router
-from core.constants import Token
-from tasks.tasks import get_prices_background
+from tasks.tasks import run_background_processes
 from views.pages import router as pages
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.check_prices_task = asyncio.create_task(
-        get_prices_background(
-            Token.SOL,
-            Token.USDC,
-        )
+        run_background_processes()
     )
     yield
     app.state.check_prices_task.cancel()
