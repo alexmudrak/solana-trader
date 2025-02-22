@@ -13,7 +13,7 @@ class OrderSellRepository:
         to_token: str,
         amount: float,
         price: float,
-        order_id: int,
+        buy_order_id: int,
     ) -> OrderSell:
         async with self.session:
             obj = OrderSell(
@@ -21,7 +21,7 @@ class OrderSellRepository:
                 to_token=to_token,
                 amount=amount,
                 price=price,
-                buy_order_id=order_id,
+                buy_order_id=buy_order_id,
             )
             self.session.add(obj)
             await self.session.commit()

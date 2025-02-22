@@ -26,26 +26,38 @@ class PricesRepository:
             raise Exception("No prices found for the specified token.")
 
     async def get_recent_prices(
-        self, token_name: str, time_threshold: datetime
+        self,
+        token_name: str,
+        time_threshold: datetime,
+        descending: bool = False,
     ) -> list[Price]:
-        stmt = (
-            select(Price)
-            .where(
-                Price.token_name == token_name,
-                Price.created >= time_threshold,
-            )
-            .order_by(Price.created.desc())
+        stmt = select(Price).where(
+            Price.token_name == token_name,
+            Price.created >= time_threshold,
         )
+        if descending:
+            stmt = stmt.order_by(Price.created.desc())
+        else:
+            stmt = stmt.order_by(Price.created)
+
         result = await self.session.execute(stmt)
         recent_prices = list(result.scalars().all())
 
         return recent_prices
 
+    async def get_tokens(self) -> list[str]:
+        stmt = select(Price.token_name).distinct()
+        result = await self.session.execute(stmt)
+
+        tokens = list(result.scalars().all())
+
+        return tokens
+
     async def create(
         self,
         price: float,
         token_name: str,
-    ) -> float:
+    ) -> Price:
         async with self.session.begin():
             obj = Price(
                 token_name=token_name,
@@ -55,4 +67,4 @@ class PricesRepository:
             self.session.add(obj)
             await self.session.commit()
 
-        return obj.price
+        return obj

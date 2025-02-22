@@ -25,10 +25,10 @@ class TradeService:
         # TODO: Need to remove in the production and
         #       get fee from FetcherService
         self.market_fee = 1.0003  # 0.03%
-        self.sell_threshold = 1
+        self.sell_threshold = 0.5
         self.analysis_prices_count = 10
         self.buy_amount = 0.3
-        self.buy_threshold = 0.5
+        self.buy_threshold = 0.1
         self.buy_from_token_name = Token.USDC.name
 
     async def __can_sell_order(
@@ -38,7 +38,7 @@ class TradeService:
     ) -> bool:
         # This is simple algorithm to check
         # if will get profit from selling order
-        return (sell_price - buy_price) > self.sell_threshold
+        return sell_price >= (buy_price + self.sell_threshold)
 
     async def __can_buy_order(
         self, current_price: float, recent_prices: list[Price]
@@ -111,6 +111,7 @@ class TradeService:
         recent_prices = await self.prices.get_recent_prices(
             self.token_name,
             self.utc_time_threshold,
+            descending=True,
         )
 
         if await self.__can_buy_order(

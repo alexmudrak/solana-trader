@@ -1,139 +1,52 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from core.constants import MAIN_TOKEN, OrderAction
 from core.database import get_session
-from models.orders_models import OrderBuy, OrderSell
-from models.prices_models import Price
-from schemas.tokens_schemas import BuyTokensRequest, SellTokensRequest
+from repositories.prices_repository import PricesRepository
+from schemas.tokens_schemas import (
+    PriceResponse,
+    TokensResponse,
+)
 
 router = APIRouter()
 
 
-@router.get("/", response_class=JSONResponse)
+@router.get("/", response_model=TokensResponse)
 async def get_tokens(
     db_session: AsyncSession = Depends(get_session),
 ):
-    result = await db_session.execute(select(Price.token_name).distinct())
+    prices_repository = PricesRepository(db_session)
 
-    tokens = result.scalars().all()
+    result = await prices_repository.get_tokens()
 
-    return {"tokens": tokens}
+    return TokensResponse(tokens=result)
 
 
-@router.get("/prices/{token_name}", response_class=JSONResponse)
+@router.get("/prices/{token_name}", response_model=PriceResponse)
 async def get_prices_data(
     token_name: str,
+    minutes: int = 60 * 24,
     db_session: AsyncSession = Depends(get_session),
 ):
-    time_ago = datetime.now(UTC) - timedelta(hours=12)
+    prices_repository = PricesRepository(db_session)
+    time_threshold = datetime.now(UTC) - timedelta(minutes=minutes)
 
-    result = await db_session.execute(
-        select(Price)
-        .where(
-            Price.token_name == token_name,
-            Price.created >= time_ago,
-        )
-        .order_by(Price.created)
+    result = await prices_repository.get_recent_prices(
+        token_name,
+        time_threshold,
     )
-    prices_data = result.scalars().all()
 
-    if not prices_data:
+    if not result:
         raise HTTPException(
             status_code=404,
             detail="Token not found",
         )
 
-    prices = {"created": [], "prices": []}
-    for price in prices_data:
-        prices["created"].append(price.created)
-        prices["prices"].append(price.price)
+    prices = PriceResponse(
+        created=[price.created for price in result],
+        prices=[price.price for price in result],
+    )
 
     return prices
-
-
-@router.post("/buy", response_class=JSONResponse)
-async def buy_tokens(
-    request: BuyTokensRequest,
-    db_session: AsyncSession = Depends(get_session),
-):
-    async with db_session.begin():
-        order = OrderBuy(
-            from_token=MAIN_TOKEN,
-            to_token=request.token_select,
-            amount=request.amount,
-            price=request.amount * request.price,
-        )
-        db_session.add(order)
-        await db_session.flush()
-
-    return {
-        "id": order.id,
-        "status": "OK",
-        "token": order.to_token,
-        "action": OrderAction.BUY,
-        "amount": order.amount,
-        "price": order.price,
-    }
-
-
-@router.post("/sell", response_class=JSONResponse)
-async def sell_tokens(
-    request: SellTokensRequest,
-    db_session: AsyncSession = Depends(get_session),
-):
-    async with db_session.begin():
-        order = OrderSell(
-            from_token=request.token_select,
-            to_token=MAIN_TOKEN,
-            amount=request.amount,
-            price=request.amount * request.price,
-            buy_order_id=request.order_id,
-        )
-        db_session.add(order)
-        await db_session.flush()
-
-    return {
-        "status": "OK",
-        "token": order.to_token,
-        "action": OrderAction.SELL,
-        "amount": order.amount,
-        "price": order.price,
-    }
-
-
-@router.get("/orders/{token_name}", response_class=JSONResponse)
-async def get_orders(
-    token_name: str,
-    db_session: AsyncSession = Depends(get_session),
-):
-    result = await db_session.execute(
-        select(OrderBuy)
-        .options(selectinload(OrderBuy.sells))
-        .where(OrderBuy.to_token == token_name)
-        .order_by(OrderBuy.created.desc())
-    )
-    orders_data = result.scalars().all()
-    if not orders_data:
-        raise HTTPException(
-            status_code=404,
-            detail="Orders not found",
-        )
-    result = [
-        {
-            "id": order.id,
-            "created": order.created,
-            "token": order.to_token,
-            "count": order.amount,
-            "price": order.price,
-            "sells": order.sells,
-        }
-        for order in orders_data
-    ]
-
-    return result
