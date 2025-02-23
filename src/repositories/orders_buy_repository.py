@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from datetime import datetime
+
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -43,6 +45,22 @@ class OrderBuyRepository:
         except SQLAlchemyError as e:
             print(f"Error while fetching orders for token {token_name}: {e}")
             return []
+
+    async def get_recent_orders_count(
+        self, token_name: str, time_threshold: datetime
+    ) -> int:
+        try:
+            stmt = select(func.count(OrderBuy.id)).where(
+                OrderBuy.to_token == token_name,
+                OrderBuy.created >= time_threshold,
+            )
+            result = await self.session.execute(stmt)
+            count = result.scalar()
+
+            return count or 0
+        except SQLAlchemyError as e:
+            print(f"Error fetching order count: {e}")
+            return 0
 
     async def create(
         self,

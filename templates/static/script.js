@@ -82,7 +82,6 @@ async function renderChart() {
         borderColor: 'rgba(255, 1, 1, 1)',
         borderWidth: 1,
         pointStyle: 'triangle',
-        pointRotation: 180,
         pointRadius: 10,
         pointBorderColor: 'rgba(255, 1, 1, 1)',
         fill: false,
@@ -95,6 +94,7 @@ async function renderChart() {
         borderColor: 'rgba(0, 0, 255, 1)',
         borderWidth: 1,
         pointStyle: 'triangle',
+        pointRotation: 180,
         pointRadius: 10,
         pointBorderColor: 'rgba(0, 0, 255, 1)',
         fill: false,
@@ -192,7 +192,7 @@ async function randerTable(currentPrice, orders_data) {
     const sellButton =
       row.sells.length === 0
         ? `<button class="bg-red-500 text-white px-2 py-1 rounded"
-            hx-post="/api/v1/tokens/sell"
+            hx-post="/api/v1/orders/sell"
             hx-ext='json-enc'
             hx-include="#order-id-${row.id}, #amount-id-${row.id}, #token-select, #current-price-value"
             hx-target="#message">SELL</button>`
@@ -224,7 +224,7 @@ async function randerTable(currentPrice, orders_data) {
             <td class="border-b px-4 py-2">${profit.toFixed(2)}</</td >
             <td class="border-b px-4 py-2">${sellButton}
                 <input type="hidden" id="order-id-${row.id}" name="order-id" value="${row.id}" />
-                <input type="hidden" id="amount-id-${row.id}" name="amount" value="${row.count}" />
+                <input type="hidden" id="amount-id-${row.id}" name="amount" value="${row.amount}" />
             </td>
         `
     tbody.appendChild(tr)

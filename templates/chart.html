@@ -50,7 +50,7 @@
         <div class="w-full flex justify-between">
             <button id="buy-button"
                     class="w-full px-4 py-2 mr-1 bg-green-500 text-white font-semibold rounded hover:bg-green-600 transition"
-                    hx-post="/api/v1/tokens/buy"
+                    hx-post="/api/v1/orders/buy"
                     hx-ext='json-enc'
                     hx-include="#amount, #token-select, #current-price-value"
                     hx-target="#message">BUY</button>
