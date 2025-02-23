@@ -58,13 +58,12 @@ class PricesRepository:
         price: float,
         token_name: str,
     ) -> Price:
-        async with self.session.begin():
-            obj = Price(
-                token_name=token_name,
-                price=price,
-                created=datetime.now(UTC),
-            )
-            self.session.add(obj)
-            await self.session.commit()
+        obj = Price(
+            token_name=token_name,
+            price=price,
+            created=datetime.now(UTC),
+        )
+        self.session.add(obj)
+        await self.session.flush()
 
         return obj

@@ -69,19 +69,13 @@ class OrderBuyRepository:
         amount: float,
         price: float,
     ) -> OrderBuy:
-        try:
-            async with self.session:
-                obj = OrderBuy(
-                    from_token=from_token,
-                    to_token=to_token,
-                    amount=amount,
-                    price=price,
-                )
-                self.session.add(obj)
-                await self.session.commit()
+        obj = OrderBuy(
+            from_token=from_token,
+            to_token=to_token,
+            amount=amount,
+            price=price,
+        )
+        self.session.add(obj)
+        await self.session.flush()
 
-            return obj
-        except SQLAlchemyError as e:
-            print(f"Error while creating order: {e}")
-
-            raise
+        return obj

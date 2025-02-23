@@ -5,6 +5,7 @@ from core.constants import MAIN_TOKEN
 from core.database import get_session
 from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
+from repositories.pairs_repository import PairsRepository
 from schemas.orders_schemas import (
     BuyTokensResponse,
     OrderAction,
@@ -73,15 +74,23 @@ async def sell_tokens(
 
 
 @router.get(
-    "/orders/{token_name}",
+    "/{pair_id}",
     response_model=list[BuyTokensResponse],
 )
 async def get_orders(
-    token_name: str,
+    pair_id: int,
     db_session: AsyncSession = Depends(get_session),
 ):
     order_buy_repository = OrderBuyRepository(db_session)
-
+    pairs_repository = PairsRepository(db_session)
+    # TODO: Refactor add relationships to Trade pair
+    pair = await pairs_repository.get_pair_by_id(pair_id)
+    if not pair:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trade pair id {pair_id} not found",
+        )
+    token_name = pair.to_token.name
     result = await order_buy_repository.get_orders_for_token(
         token_name,
     )

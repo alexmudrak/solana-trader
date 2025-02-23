@@ -15,15 +15,14 @@ class OrderSellRepository:
         price: float,
         buy_order_id: int,
     ) -> OrderSell:
-        async with self.session:
-            obj = OrderSell(
-                from_token=from_token,
-                to_token=to_token,
-                amount=amount,
-                price=price,
-                buy_order_id=buy_order_id,
-            )
-            self.session.add(obj)
-            await self.session.commit()
+        obj = OrderSell(
+            from_token=from_token,
+            to_token=to_token,
+            amount=amount,
+            price=price,
+            buy_order_id=buy_order_id,
+        )
+        self.session.add(obj)
+        await self.session.flush()
 
         return obj

@@ -1,52 +1,37 @@
-from datetime import UTC, datetime, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
-from repositories.prices_repository import PricesRepository
+from repositories.tokens_repository import TokensRepository
 from schemas.tokens_schemas import (
-    PriceResponse,
-    TokensResponse,
+    TokenRequest,
+    TokenResponse,
 )
 
 router = APIRouter()
 
 
-@router.get("/", response_model=TokensResponse)
+@router.get("/", response_model=list[TokenResponse])
 async def get_tokens(
     db_session: AsyncSession = Depends(get_session),
 ):
-    prices_repository = PricesRepository(db_session)
+    prices_repository = TokensRepository(db_session)
 
     result = await prices_repository.get_tokens()
 
-    return TokensResponse(tokens=result)
+    return result
 
 
-@router.get("/prices/{token_name}", response_model=PriceResponse)
-async def get_prices_data(
-    token_name: str,
-    minutes: int = 60 * 24,
+@router.post("/", response_model=TokenResponse)
+async def create_token(
+    request: TokenRequest,
     db_session: AsyncSession = Depends(get_session),
 ):
-    prices_repository = PricesRepository(db_session)
-    time_threshold = datetime.now(UTC) - timedelta(minutes=minutes)
+    tokens_repository = TokensRepository(db_session)
 
-    result = await prices_repository.get_recent_prices(
-        token_name,
-        time_threshold,
+    result = await tokens_repository.create(
+        request.name,
+        request.address,
     )
 
-    if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Token not found",
-        )
-
-    prices = PriceResponse(
-        created=[price.created for price in result],
-        prices=[price.price for price in result],
-    )
-
-    return prices
+    return result

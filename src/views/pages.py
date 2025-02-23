@@ -12,3 +12,13 @@ async def read_root(request: Request):
         "chart.html",
         {"request": request},
     )
+
+
+@router.get(
+    "/create-trader", response_class=HTMLResponse, include_in_schema=False
+)
+async def read_create_trader(request: Request):
+    return templates.TemplateResponse(
+        "create_trader.html",
+        {"request": request},
+    )

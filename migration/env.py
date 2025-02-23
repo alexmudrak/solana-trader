@@ -9,13 +9,18 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from core.settings import settings
 from models import Base
 from models.orders_models import OrderBuy, OrderSell
+from models.pair_models import TradingPairSettings, TradingSettings
 from models.prices_models import Price
+from models.token_models import Token
 
 _ = (
     Base,
     OrderBuy,
     OrderSell,
     Price,
+    Token,
+    TradingPairSettings,
+    TradingSettings,
 )
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

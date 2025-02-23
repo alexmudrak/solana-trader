@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
@@ -13,10 +11,15 @@ class SellTokensRequest(BuyTokensRequest):
     order_id: int = Field(..., alias="order-id")
 
 
-class TokensResponse(BaseModel):
-    tokens: list[str]
+class TokenRequest(BaseModel):
+    name: str
+    address: str
 
 
-class PriceResponse(BaseModel):
-    created: list[datetime]
-    prices: list[float]
+class TokenResponse(BaseModel):
+    id: int
+    name: str
+    address: str
+
+    class Config:
+        from_attributes = True

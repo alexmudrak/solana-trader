@@ -23,8 +23,13 @@ async def get_session():
     async with AsyncSessionFactory() as session:
         try:
             yield session
-        except:
+        except Exception as e:
+            print(e)
             await session.rollback()
             raise
         finally:
+            try:
+                await session.commit()
+            except Exception as e:
+                print(e)
             await session.close()

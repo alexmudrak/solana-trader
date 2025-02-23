@@ -8,7 +8,6 @@ from core.exceptions import (
     MaximumOrdersReached,
     NotEnoughPrices,
 )
-from core.settings import settings
 from models.prices_models import Price
 from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
@@ -31,13 +30,11 @@ class TradeService:
         #       get fee from FetcherService
         self.market_fee = 1.0003  # 0.03%
         self.sell_threshold = 1
-        self.analysis_prices_count = 10
-        self.buy_recent_orders_time_threshold = (
-            settings.app_time_threshold
-        )  # in minutes
-        self.buy_recent_prices_time_threshold = 15  # in minutes
+        self.buy_analysis_prices_count = 10
+        self.buy_recent_prices_time_threshold = 60  # in minutes
+        self.buy_recent_orders_time_threshold = 5  # in minutes
         self.buy_amount = 0.1
-        self.buy_threshold = 1
+        self.buy_threshold = 0.5
         self.buy_max_orders_in_threshlod = 2
 
     async def is_sell_order_possible(
@@ -57,7 +54,7 @@ class TradeService:
     ) -> bool:
         if (
             not recent_prices
-            or len(recent_prices) < self.analysis_prices_count
+            or len(recent_prices) < self.buy_analysis_prices_count
         ):
             print("Not enough prices available for analysis.")
             raise NotEnoughPrices
@@ -76,7 +73,7 @@ class TradeService:
         percentage_change = (
             (current_price - average_price) / average_price
         ) * 100
-
+        print(f"[BUY] Percentage change: {percentage_change:.2f}%")
         if percentage_change < -5:
             print(
                 f"The market is falling: current buy price {current_price:.2f}, "
@@ -94,7 +91,7 @@ class TradeService:
             )
             raise MaximumOrdersReached
 
-        if not (current_price < (average_price - self.buy_threshold)):
+        if current_price > (average_price - self.buy_threshold):
             raise BuyPriceTooHigh
 
         return True

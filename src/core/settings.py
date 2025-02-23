@@ -24,7 +24,6 @@ class Settings(BaseSettings):
 
     # Fetcher settings
     app_fetch_price_sleep: int = 5
-    app_time_threshold: int = 5  # in minutes
 
 
 settings = Settings()
