@@ -51,13 +51,11 @@ class PairsRepository:
         self,
         from_token_id: int,
         to_token_id: int,
-        data_fetch_frequency: float,
         trading_setting_id: int,
     ) -> TradingPairSettings:
         obj = TradingPairSettings(
             from_token_id=from_token_id,
             to_token_id=to_token_id,
-            data_fetch_frequency=data_fetch_frequency,
             trading_setting_id=trading_setting_id,
         )
         self.session.add(obj)

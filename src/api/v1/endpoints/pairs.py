@@ -32,13 +32,12 @@ async def create_pairs(
 ):
     # TODO: Change when can add different pairs not
     #       only USDC -> TOKEN
-    request.from_token_id = 2
+    request.from_token_id = 1
     pairs_repository = PairsRepository(db_session)
 
     result = await pairs_repository.create(
         request.from_token_id,
         request.to_token_id,
-        request.data_fetch_frequency,
         request.trading_setting_id,
     )
 

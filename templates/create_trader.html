@@ -67,7 +67,7 @@
           method="post"
           hx-post="/api/v1/pairs/"
           hx-ext='json-enc'
-          hx-include="#from-token, #to-token, #pairs-settings, data-fetch-frequency"
+          hx-include="#from-token, #to-token, #pairs-settings"
           hx-target="#message">
         <label for="from-token" class="block text-lg font-medium text-gray-700">From Token:</label>
         <select id="from-token"
@@ -85,15 +85,6 @@
                 name="trading_setting_id"
                 class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                 required></select>
-        <label for="data-fetch-frequency"
-               class="block text-lg font-medium text-gray-700 mt-4">Data Fetch Frequency (minutes):</label>
-        <input type="number"
-               id="data-fetch-frequency"
-               name="data_fetch_frequency"
-               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-               placeholder="Enter frequency in minutes"
-               required
-               min="1" />
         <div class="w-full flex justify-center mt-4">
             <button type="submit"
                     class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 transition">
