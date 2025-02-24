@@ -25,20 +25,27 @@ class PairsRepository:
 
         return pair
 
-    async def get_pairs(self) -> list[TradingPairSettings]:
+    async def get_pairs(
+        self, only_active: bool | None = None
+    ) -> list[TradingPairSettings]:
         stmt = select(TradingPairSettings).options(
             selectinload(TradingPairSettings.from_token),
             selectinload(TradingPairSettings.to_token),
             selectinload(TradingPairSettings.trading_setting),
         )
+        if only_active is True:
+            stmt = stmt.where(
+                TradingPairSettings.is_active == True  # noqa: E712
+            )
+        elif only_active is False:
+            stmt = stmt.where(
+                TradingPairSettings.is_active == False  # noqa: E712
+            )
 
         result = await self.session.execute(stmt)
         pairs = result.scalars().all()
 
-        if pairs:
-            return list(pairs)
-        else:
-            raise Exception("No pairs found.")
+        return list(pairs)
 
     async def create(
         self,

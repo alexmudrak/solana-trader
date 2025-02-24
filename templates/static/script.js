@@ -26,10 +26,16 @@ async function loadTokens() {
 
 async function fetchPrices(token_id) {
     const response = await fetch(`${PRICES_ENDPOINT}/${token_id}`)
+    if (response.status !== 200) {
+        return []
+    }
     return await response.json()
 }
 async function fetchOrders(token_id) {
     const response = await fetch(`${ORDERS_ENDPOINT}/${token_id}`)
+    if (response.status !== 200) {
+        return []
+    }
     return await response.json()
 }
 async function renderChart() {

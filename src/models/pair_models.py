@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import BaseAppModel
@@ -23,16 +23,17 @@ class TradingPairSettings(BaseAppModel):
         Token,
         foreign_keys=[to_token_id],
     )
-    data_fetch_frequency: Mapped[float] = mapped_column(
-        Float(),
-        nullable=False,
-    )
     trading_setting_id: Mapped[int] = mapped_column(
         ForeignKey("trading_settings.id")
     )
     trading_setting: Mapped["TradingSettings"] = relationship(
         "TradingSettings",
         back_populates="trading_pairs",
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
     )
 
 

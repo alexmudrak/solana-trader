@@ -1,19 +1,27 @@
-from sqlalchemy import Float, ForeignKey, String
+from sqlalchemy import Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import BaseAppModel
+from models.token_models import Token
 
 
 class OrderBuy(BaseAppModel):
     __tablename__ = "orders_buy"
 
-    from_token: Mapped[str] = mapped_column(
-        String(30),
+    from_token_id: Mapped[int] = mapped_column(
+        ForeignKey("tokens.id"),
         nullable=False,
     )
-    to_token: Mapped[str] = mapped_column(
-        String(30),
+    from_token: Mapped[Token] = relationship(
+        "Token", foreign_keys=[from_token_id]
+    )
+    to_token_id: Mapped[int] = mapped_column(
+        ForeignKey("tokens.id"),
         nullable=False,
+    )
+    to_token: Mapped[Token] = relationship(
+        "Token",
+        foreign_keys=[to_token_id],
     )
     amount: Mapped[float] = mapped_column(
         Float,
@@ -31,13 +39,19 @@ class OrderBuy(BaseAppModel):
 class OrderSell(BaseAppModel):
     __tablename__ = "orders_sell"
 
-    from_token: Mapped[str] = mapped_column(
-        String(30),
+    from_token_id: Mapped[int] = mapped_column(
+        ForeignKey("tokens.id"),
         nullable=False,
     )
-    to_token: Mapped[str] = mapped_column(
-        String(30),
+    from_token: Mapped["Token"] = relationship(
+        "Token", foreign_keys=[from_token_id]
+    )
+    to_token_id: Mapped[int] = mapped_column(
+        ForeignKey("tokens.id"),
         nullable=False,
+    )
+    to_token: Mapped["Token"] = relationship(
+        "Token", foreign_keys=[to_token_id]
     )
     amount: Mapped[float] = mapped_column(
         Float,

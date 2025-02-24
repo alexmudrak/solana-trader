@@ -30,6 +30,9 @@ async def create_pairs(
     request: CreatePairsRequest,
     db_session: AsyncSession = Depends(get_session),
 ):
+    # TODO: Change when can add different pairs not
+    #       only USDC -> TOKEN
+    request.from_token_id = 2
     pairs_repository = PairsRepository(db_session)
 
     result = await pairs_repository.create(

@@ -1,6 +1,5 @@
 from datetime import UTC, datetime, timedelta
 
-from core.constants import Token
 from core.exceptions import (
     BuyAnalyserException,
     BuyPriceTooHigh,
@@ -8,6 +7,7 @@ from core.exceptions import (
     MaximumOrdersReached,
     NotEnoughPrices,
 )
+from models.pair_models import TradingPairSettings
 from models.prices_models import Price
 from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
@@ -17,6 +17,7 @@ from repositories.prices_repository import PricesRepository
 class TradeService:
     def __init__(
         self,
+        pair_settings: TradingPairSettings,
         prices_repository: PricesRepository,
         order_buy_repository: OrderBuyRepository,
         order_sell_repository: OrderSellRepository,
@@ -24,8 +25,8 @@ class TradeService:
         self.prices = prices_repository
         self.order_buy = order_buy_repository
         self.order_sell = order_sell_repository
-        self.base_token = Token.USDC
-        self.target_token = Token.SOL
+        self.base_token = pair_settings.from_token
+        self.target_token = pair_settings.to_token
         # TODO: Need to remove in the production and
         #       get fee from FetcherService
         self.market_fee = 1.0003  # 0.03%
@@ -76,7 +77,7 @@ class TradeService:
         print(f"[BUY] Percentage change: {percentage_change:.2f}%")
         if percentage_change < -5:
             print(
-                f"The market is falling: current buy price {current_price:.2f}, "
+                f"[BUY] The market is falling: current buy price {current_price:.2f}, "
                 f"average price {average_price:.2f}. Stopping purchases."
             )
             raise MarketFalling
