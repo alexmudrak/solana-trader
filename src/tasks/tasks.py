@@ -20,6 +20,9 @@ async def get_latest_price(pairs_settings: list[TradingPairSettings]):
         to_tokens_list = [
             pair_setting.to_token.address for pair_setting in pairs_settings
         ]
+        # TODO: Change when can add different pairs not
+        #       only USDC -> TOKEN
+        #       Need to remove
         from_token = Token.USDC
 
         result = await market.get_price(

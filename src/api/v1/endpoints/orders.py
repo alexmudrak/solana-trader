@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.constants import MAIN_TOKEN
 from core.database import get_session
 from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
@@ -27,10 +26,19 @@ async def buy_tokens(
     db_session: AsyncSession = Depends(get_session),
 ):
     order_buy_repository = OrderBuyRepository(db_session)
+    pairs_repository = PairsRepository(db_session)
+    pair_id = request.pair_id
+    # TODO: Refactor add relationships to Trade pair
+    pair = await pairs_repository.get_pair_by_id(pair_id)
+    if not pair:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trade pair id {pair_id} not found",
+        )
 
     result = await order_buy_repository.create(
-        from_token=MAIN_TOKEN,
-        to_token=request.token_select,
+        from_token_id=pair.from_token_id,
+        to_token_id=pair.to_token_id,
         amount=request.amount,
         price=request.amount * request.price,
     )
@@ -39,7 +47,7 @@ async def buy_tokens(
         id=result.id,
         created=result.created,
         status=OrderStatus.OK,
-        token=result.to_token,
+        token=result.to_token.name,
         action=OrderAction.BUY,
         amount=result.amount,
         price=result.price,
@@ -52,10 +60,19 @@ async def sell_tokens(
     db_session: AsyncSession = Depends(get_session),
 ):
     order_sell_repository = OrderSellRepository(db_session)
+    pairs_repository = PairsRepository(db_session)
+    pair_id = request.pair_id
+    # TODO: Refactor add relationships to Trade pair
+    pair = await pairs_repository.get_pair_by_id(pair_id)
+    if not pair:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trade pair id {pair_id} not found",
+        )
 
     result = await order_sell_repository.create(
-        from_token=request.token_select,
-        to_token=MAIN_TOKEN,
+        from_token_id=pair.to_token_id,
+        to_token_id=pair.from_token_id,
         amount=request.amount,
         price=request.amount * request.price,
         buy_order_id=request.order_id,
@@ -65,7 +82,7 @@ async def sell_tokens(
         id=result.id,
         created=result.created,
         status=OrderStatus.OK,
-        token=result.to_token,
+        token=result.to_token.name,
         action=OrderAction.SELL,
         amount=result.amount,
         price=result.price,

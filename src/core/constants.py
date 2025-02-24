@@ -1,7 +1,5 @@
 from enum import Enum
 
-MAIN_TOKEN = "USDC"
-
 
 class Token(Enum):
     SOL = "So11111111111111111111111111111111111111112"

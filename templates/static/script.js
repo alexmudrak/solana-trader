@@ -239,7 +239,7 @@ async function randerTable(currentPrice, orders_data) {
             <td class="border-b px-4 py-2">${row.price.toFixed(2)}</td>
             <td class="border-b px-4 py-2">${profit.toFixed(2)}</</td >
             <td class="border-b px-4 py-2">${sellButton}
-                <input type="hidden" id="order-id-${row.id}" name="order-id" value="${row.id}" />
+                <input type="hidden" id="order-id-${row.id}" name="order_id" value="${row.id}" />
                 <input type="hidden" id="amount-id-${row.id}" name="amount" value="${row.amount}" />
             </td>
         `

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class BuyTokensRequest(BaseModel):
-    token_select: int
+    pair_id: int
     amount: float
     price: float
 
