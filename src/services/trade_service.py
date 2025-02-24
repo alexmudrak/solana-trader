@@ -98,7 +98,7 @@ class TradeService:
         return True
 
     async def check_sell_orders(self):
-        last_price = await self.prices.get_latest(self.target_token.name)
+        last_price = await self.prices.get_latest(self.target_token.id)
         print(
             f"[SELL] Latest price WITHOUT FEE for {self.target_token.name}: {last_price:.2f}"
         )
@@ -127,7 +127,7 @@ class TradeService:
                 )
 
     async def check_buy_order(self):
-        last_price = await self.prices.get_latest(self.target_token.name)
+        last_price = await self.prices.get_latest(self.target_token.id)
         # TODO: Implement getting fee from DEX market
         buy_price_with_fee = last_price * self.market_fee
         recent_prices_time_threshold = datetime.now(UTC) - timedelta(
@@ -138,12 +138,12 @@ class TradeService:
         )
 
         recent_prices = await self.prices.get_recent_prices(
-            self.target_token.name,
+            self.target_token.id,
             recent_prices_time_threshold,
             descending=True,
         )
         recent_orders_count = await self.order_buy.get_recent_orders_count(
-            self.target_token.name,
+            self.target_token.id,
             recent_orders_time_threshold,
         )
 
@@ -162,8 +162,8 @@ class TradeService:
             # TODO: Implement create order on DEX
             buy_price = self.buy_amount * buy_price_with_fee
             await self.order_buy.create(
-                self.base_token.name,
-                self.target_token.name,
+                self.base_token.id,
+                self.target_token.id,
                 self.buy_amount,
                 buy_price,
             )

@@ -9,15 +9,15 @@ class OrderSellRepository:
 
     async def create(
         self,
-        from_token: str,
-        to_token: str,
+        from_token_id: int,
+        to_token_id: int,
         amount: float,
         price: float,
         buy_order_id: int,
     ) -> OrderSell:
         obj = OrderSell(
-            from_token=from_token,
-            to_token=to_token,
+            from_token_id=from_token_id,
+            to_token_id=to_token_id,
             amount=amount,
             price=price,
             buy_order_id=buy_order_id,

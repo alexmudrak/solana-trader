@@ -29,13 +29,13 @@ class OrderBuyRepository:
 
     async def get_orders_for_token(
         self,
-        token_name: str,
+        token_id: int,
     ) -> list[OrderBuy]:
         try:
             stmt = (
                 select(OrderBuy)
                 .options(selectinload(OrderBuy.sells))
-                .where(OrderBuy.to_token == token_name)
+                .where(OrderBuy.to_token_id == token_id)
                 .order_by(OrderBuy.created.desc())
             )
             result = await self.session.execute(stmt)
@@ -43,15 +43,15 @@ class OrderBuyRepository:
 
             return orders
         except SQLAlchemyError as e:
-            print(f"Error while fetching orders for token {token_name}: {e}")
+            print(f"Error while fetching orders for token {token_id}: {e}")
             return []
 
     async def get_recent_orders_count(
-        self, token_name: str, time_threshold: datetime
+        self, token_id: int, time_threshold: datetime
     ) -> int:
         try:
             stmt = select(func.count(OrderBuy.id)).where(
-                OrderBuy.to_token == token_name,
+                OrderBuy.to_token_id == token_id,
                 OrderBuy.created >= time_threshold,
             )
             result = await self.session.execute(stmt)
@@ -64,14 +64,14 @@ class OrderBuyRepository:
 
     async def create(
         self,
-        from_token: str,
-        to_token: str,
+        from_token_id: int,
+        to_token_id: int,
         amount: float,
         price: float,
     ) -> OrderBuy:
         obj = OrderBuy(
-            from_token=from_token,
-            to_token=to_token,
+            from_token_id=from_token_id,
+            to_token_id=to_token_id,
             amount=amount,
             price=price,
         )

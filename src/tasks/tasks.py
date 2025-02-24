@@ -30,7 +30,7 @@ async def get_latest_price(pairs_settings: list[TradingPairSettings]):
             to_token = pair_setting.to_token
             price = float(result["data"][to_token.address]["price"])
 
-            await prices_repository.create(price, to_token.name)
+            await prices_repository.create(price, to_token.id)
 
             print(
                 f"[FETCHER] Current WITHOUT FEE price for {from_token.name} to {to_token.name}: {price:.2f}"

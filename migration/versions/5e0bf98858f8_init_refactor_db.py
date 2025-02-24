@@ -1,8 +1,8 @@
 """init: refactor DB
 
-Revision ID: 835bb1ca39a0
+Revision ID: 5e0bf98858f8
 Revises:
-Create Date: 2025-02-24 19:16:01.176619
+Create Date: 2025-02-24 19:36:23.513500
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "835bb1ca39a0"
+revision: str = "5e0bf98858f8"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -83,7 +83,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "prices",
-        sa.Column("from_token_id", sa.Integer(), nullable=False),
+        sa.Column("token_id", sa.Integer(), nullable=False),
         sa.Column("price", sa.Float(), nullable=False),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
@@ -93,7 +93,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["from_token_id"],
+            ["token_id"],
             ["tokens.id"],
         ),
         sa.PrimaryKeyConstraint("id"),

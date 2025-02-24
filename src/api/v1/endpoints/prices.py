@@ -29,9 +29,9 @@ async def get_prices_data(
             detail=f"Trade pair id {pair_id} not found",
         )
 
-    token_name = pair.to_token.name
+    token_id = pair.to_token.id
     result = await prices_repository.get_recent_prices(
-        token_name,
+        token_id,
         time_threshold,
     )
 

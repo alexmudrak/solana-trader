@@ -10,10 +10,10 @@ class PricesRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_latest(self, token_name: str) -> float:
+    async def get_latest(self, token_id: int) -> float:
         stmt = (
             select(Price)
-            .where(Price.token_name == token_name)
+            .where(Price.token_id == token_id)
             .order_by(Price.created.desc())
             .limit(1)
         )
@@ -27,12 +27,12 @@ class PricesRepository:
 
     async def get_recent_prices(
         self,
-        token_name: str,
+        token_id: int,
         time_threshold: datetime,
         descending: bool = False,
     ) -> list[Price]:
         stmt = select(Price).where(
-            Price.token_name == token_name,
+            Price.token_id == token_id,
             Price.created >= time_threshold,
         )
         if descending:
@@ -45,21 +45,13 @@ class PricesRepository:
 
         return recent_prices
 
-    async def get_tokens(self) -> list[str]:
-        stmt = select(Price.token_name).distinct()
-        result = await self.session.execute(stmt)
-
-        tokens = list(result.scalars().all())
-
-        return tokens
-
     async def create(
         self,
         price: float,
-        token_name: str,
+        token_id: int,
     ) -> Price:
         obj = Price(
-            token_name=token_name,
+            token_id=token_id,
             price=price,
             created=datetime.now(UTC),
         )

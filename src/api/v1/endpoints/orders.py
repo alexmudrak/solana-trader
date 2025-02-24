@@ -90,9 +90,9 @@ async def get_orders(
             status_code=404,
             detail=f"Trade pair id {pair_id} not found",
         )
-    token_name = pair.to_token.name
+    token_id = pair.to_token.id
     result = await order_buy_repository.get_orders_for_token(
-        token_name,
+        token_id,
     )
 
     if not result:
@@ -106,7 +106,7 @@ async def get_orders(
             id=order.id,
             created=order.created,
             status=OrderStatus.OK,
-            token=order.to_token,
+            token=order.to_token.name,
             action=OrderAction.BUY,
             amount=order.amount,
             price=order.price,
