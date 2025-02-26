@@ -9,18 +9,19 @@ let chart = null
 let selectedToken = null
 let previousPrice = null
 let currentPrice = null
+let tradingSettings = {}
 
 async function loadTokens() {
     const response = await fetch(`${PAIRS_API_ENDPOINT}`)
     const data = await response.json()
     const tokenSelect = document.getElementById('token-select')
 
-    console.log(data)
     data.forEach((pair) => {
         const option = document.createElement('option')
         option.value = pair.id
         option.textContent = `${pair.from_token.name} -> ${pair.to_token.name}`
         tokenSelect.appendChild(option)
+        tradingSettings[pair.id] = pair.trading_setting
     })
 }
 
@@ -43,6 +44,7 @@ async function renderChart() {
         console.warn('No token selected')
         return
     }
+    await loadTokens()
     const data = await fetchPrices(selectedToken)
     const orders_data = await fetchOrders(selectedToken)
 
@@ -66,7 +68,6 @@ async function renderChart() {
             row.sells
                 .map((sell) => {
                     const pricePerAmount = sell.price / sell.amount
-                    console.log(sell)
                     const dateWithoutSeconds = sell.created.slice(0, 16)
                     return availableDates.has(dateWithoutSeconds)
                         ? { x: sell.created, y: pricePerAmount }
@@ -149,7 +150,8 @@ async function renderChart() {
     document.getElementById('price-container').style.display = 'block'
     document.getElementById('buttons-container').style.display = 'flex'
 
-    await randerTable(currentPrice, orders_data)
+    await renderPairSettings()
+    await renderTable(currentPrice, orders_data)
 }
 function updatePriceDisplay(currentPrice) {
     const priceDisplay = document.getElementById('current-price')
@@ -193,7 +195,7 @@ function updateChart() {
     }
 }
 
-async function randerTable(currentPrice, orders_data) {
+async function renderTable(currentPrice, orders_data) {
     if (!selectedToken) {
         console.warn('No token selected')
         return
@@ -208,7 +210,7 @@ async function randerTable(currentPrice, orders_data) {
         const sellButton =
             row.sells.length === 0
                 ? `<button class="bg-red-500 text-white px-2 py-1 rounded"
-            hx-post="/api/v1/orders/sell"
+            hx-post="${ORDERS_ENDPOINT}/sell"
             hx-ext='json-enc'
             hx-include="#order-id-${row.id}, #amount-id-${row.id}, #token-select, #current-price-value"
             hx-target="#message">SELL</button>`
@@ -250,6 +252,34 @@ async function randerTable(currentPrice, orders_data) {
     profitDisplay.textContent = `Total Profit: $${totalProfit.toFixed(2)}`
 }
 
+async function renderPairSettings() {
+    if (!selectedToken) {
+        console.warn('No token selected')
+        return
+    }
+    const settings = tradingSettings[selectedToken]
+
+    if (settings) {
+        document.getElementById('take-profit').value =
+            settings.take_profit_percentage
+        document.getElementById('stop-loss').value = settings.stop_loss_percentage
+        document.getElementById('short-ema').value = settings.short_ema_time_period
+        document.getElementById('long-ema').value = settings.long_ema_time_period
+        document.getElementById('rsi-buy').value = settings.rsi_buy_threshold
+        document.getElementById('rsi-sell').value = settings.rsi_sell_threshold
+        document.getElementById('rsi-period').value = settings.rsi_time_period
+        document.getElementById('buy-amount').value = settings.buy_amount
+        document.getElementById('max-orders').value =
+            settings.buy_max_orders_threshold
+        const form = document.getElementById('settings-form')
+        if (form) {
+            form.setAttribute('hx-patch', `${SETTINGS_ENDPOINT}/${settings.id}`)
+            htmx.process(form)
+        }
+    } else {
+        console.warn('No trading settings found for Token ID:', tokenId)
+    }
+}
 function startAutoUpdate() {
     loadTokens()
     setInterval(() => {
@@ -261,4 +291,16 @@ function startAutoUpdate() {
 
 document.addEventListener('DOMContentLoaded', function() {
     startAutoUpdate()
+})
+document.addEventListener('DOMContentLoaded', () => {
+    const collapsibleButton = document.querySelector('.collapsible')
+    const content = document.querySelector('.content')
+
+    collapsibleButton.addEventListener('click', () => {
+        if (content.style.display === 'block') {
+            content.style.display = 'none'
+        } else {
+            content.style.display = 'block'
+        }
+    })
 })
