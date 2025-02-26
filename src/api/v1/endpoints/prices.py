@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/{pair_id}", response_model=PriceResponse)
 async def get_prices_data(
     pair_id: int,
-    minutes: int = 60 * 24,
+    minutes: int = 60 * 3,
     db_session: AsyncSession = Depends(get_session),
 ):
     # TODO: Refactor add relationships to Trade pair

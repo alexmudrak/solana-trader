@@ -29,14 +29,32 @@ class TradeService:
         # TODO: Need to remove in the production and
         #       get fee from FetcherService
         self.market_fee = 1.001  # 0.1%
-        self.take_profit = 0.5
-        self.short_ema_time_period = 5  # in minutes
-        self.long_ema_time_period = 20  # in minutes
-        self.rsi_buy_threshold = 30
-        self.rsi_sell_threshold = 70
-        self.rsi_time_period = 14  # in minutes
-        self.buy_amount = 0.1
-        self.buy_max_orders_threshlod = 2
+        self.trading_setting = pair_settings.trading_setting
+        self.take_profit_percentage = (
+            self.trading_setting.take_profit_percentage
+        )  # default 0.05 -> 5% profit
+        self.stop_loss_percentage = (
+            self.trading_setting.stop_loss_percentage
+        )  # default 0.05 -> 5% loss
+        self.short_ema_time_period = (
+            self.trading_setting.short_ema_time_period
+        )  # default 5, in minutes
+        self.long_ema_time_period = (
+            self.trading_setting.long_ema_time_period
+        )  # default 20, in minutes
+        self.rsi_buy_threshold = (
+            self.trading_setting.rsi_buy_threshold
+        )  # default 30
+        self.rsi_sell_threshold = (
+            self.trading_setting.rsi_sell_threshold
+        )  # default 70
+        self.rsi_time_period = (
+            self.trading_setting.rsi_time_period
+        )  # default 14, in minutes
+        self.buy_amount = self.trading_setting.buy_amount  # default 0.1
+        self.buy_max_orders_threshlod = (
+            self.trading_setting.buy_max_orders_threshold
+        )  # default 2
 
     def get_prices_list_by_minutes(
         self, prices: list[Price]
@@ -109,8 +127,30 @@ class TradeService:
             order_buy_price = order.price * order.amount
             order_sell_price = sell_price_with_fee * order.amount
 
+            stop_loss_price = order_buy_price * (1 - self.stop_loss_percentage)
+            take_profit_price = order_buy_price * (
+                1 + self.take_profit_percentage
+            )
+
             # TODO: Implement create order on DEX
-            if (order_sell_price - order_buy_price) > self.take_profit:
+            if sell_price_with_fee < stop_loss_price:
+                print(
+                    f"[SELL] Sell order for order ID {order.id} triggered by stop loss."
+                )
+                await self.order_sell.create(
+                    order.to_token_id,
+                    order.from_token_id,
+                    order.amount,
+                    sell_price_with_fee,
+                    order.id,
+                )
+                print(
+                    f"[SELL] Sell order created due to stop loss for order ID {order.id}. "
+                    f"Buy price: {order_buy_price:.2f}, "
+                    f"Sell price: {sell_price_with_fee:.2f}, "
+                    f"Stop loss price: {stop_loss_price:.2f}"
+                )
+            elif sell_price_with_fee >= take_profit_price:
                 await self.order_sell.create(
                     order.to_token_id,
                     order.from_token_id,
@@ -121,11 +161,13 @@ class TradeService:
                 print(
                     f"[SELL] Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
-                    f"Sell price: {order_sell_price:.2f}, "
-                    f"Profit: {order_sell_price - order_buy_price}"
+                    f"Sell price: {sell_price_with_fee:.2f}, "
+                    f"Profit: {order_sell_price - order_buy_price:.2f}"
                 )
             else:
-                print(f"[SELL] Order ID {order.id}: Not profitable to sell.")
+                print(
+                    f"[SELL] Order ID {order.id}: Not profitable to sell or stop-loss not triggered."
+                )
 
     async def check_buy_order(
         self,

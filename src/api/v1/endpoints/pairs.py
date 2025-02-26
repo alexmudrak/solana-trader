@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -9,6 +9,7 @@ from schemas.pairs_schemas import (
     CreatePairsSettingsRequest,
     PairsResponse,
     PairsSettingsResponse,
+    UpdatePairSettingsRequest,
 )
 
 router = APIRouter()
@@ -63,5 +64,31 @@ async def create_pairs_settings(
     pairs_settings_repository = PairsSettingsRepository(db_session)
 
     result = await pairs_settings_repository.create(request.name)
+
+    return result
+
+
+@router.patch(
+    "/settings/{pair_id}",
+    response_model=PairsSettingsResponse,
+)
+async def update_settings(
+    pair_id: int,
+    request: UpdatePairSettingsRequest,
+    db_session: AsyncSession = Depends(get_session),
+):
+    pairs_repository = PairsRepository(db_session)
+    pairs_settings_repository = PairsSettingsRepository(db_session)
+
+    pair = await pairs_repository.get_pair_by_id(pair_id)
+    if not pair:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trade pair id {pair_id} not found",
+        )
+
+    result = await pairs_settings_repository.update_settings(
+        pair.trading_setting_id, request
+    )
 
     return result
