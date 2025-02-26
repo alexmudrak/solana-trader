@@ -12,16 +12,9 @@ class OrderBuy(BaseAppModel):
         ForeignKey("tokens.id"),
         nullable=False,
     )
-    from_token: Mapped[Token] = relationship(
-        "Token", foreign_keys=[from_token_id]
-    )
     to_token_id: Mapped[int] = mapped_column(
         ForeignKey("tokens.id"),
         nullable=False,
-    )
-    to_token: Mapped[Token] = relationship(
-        "Token",
-        foreign_keys=[to_token_id],
     )
     amount: Mapped[float] = mapped_column(
         Float,
@@ -30,6 +23,13 @@ class OrderBuy(BaseAppModel):
     price: Mapped[float] = mapped_column(
         Float,
         nullable=False,
+    )
+    from_token: Mapped[Token] = relationship(
+        "Token", foreign_keys=[from_token_id]
+    )
+    to_token: Mapped[Token] = relationship(
+        "Token",
+        foreign_keys=[to_token_id],
     )
     sells: Mapped[list["OrderSell"]] = relationship(
         "OrderSell", back_populates="buy_order"
@@ -43,15 +43,9 @@ class OrderSell(BaseAppModel):
         ForeignKey("tokens.id"),
         nullable=False,
     )
-    from_token: Mapped["Token"] = relationship(
-        "Token", foreign_keys=[from_token_id]
-    )
     to_token_id: Mapped[int] = mapped_column(
         ForeignKey("tokens.id"),
         nullable=False,
-    )
-    to_token: Mapped["Token"] = relationship(
-        "Token", foreign_keys=[to_token_id]
     )
     amount: Mapped[float] = mapped_column(
         Float,
@@ -63,6 +57,12 @@ class OrderSell(BaseAppModel):
     )
     buy_order_id: Mapped[int] = mapped_column(
         ForeignKey("orders_buy.id"), nullable=False
+    )
+    from_token: Mapped["Token"] = relationship(
+        "Token", foreign_keys=[from_token_id]
+    )
+    to_token: Mapped["Token"] = relationship(
+        "Token", foreign_keys=[to_token_id]
     )
     buy_order: Mapped[OrderBuy] = relationship(
         "OrderBuy", back_populates="sells"

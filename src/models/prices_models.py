@@ -12,8 +12,8 @@ class Price(BaseAppModel):
         ForeignKey("tokens.id"),
         nullable=False,
     )
-    token: Mapped[Token] = relationship("Token", foreign_keys=[token_id])
     price: Mapped[float] = mapped_column(
         Float,
         nullable=False,
     )
+    token: Mapped[Token] = relationship("Token", foreign_keys=[token_id])
