@@ -10,6 +10,7 @@ from repositories.orders_sell_repository import OrderSellRepository
 from repositories.pairs_repository import PairsRepository
 from repositories.prices_repository import PricesRepository
 from services.trade_service import TradeService
+from utils.trade_indicators import TradeIndicators
 
 
 async def get_latest_price(pairs_settings: list[TradingPairSettings]):
@@ -41,6 +42,7 @@ async def get_latest_price(pairs_settings: list[TradingPairSettings]):
 
 
 async def trade_execution(pairs_settings: list[TradingPairSettings]):
+    trade_indicators = TradeIndicators()
     for pair_settings in pairs_settings:
         async for session in get_session():
             prices_repository = PricesRepository(session)
@@ -48,14 +50,13 @@ async def trade_execution(pairs_settings: list[TradingPairSettings]):
             orders_sell_repository = OrderSellRepository(session)
 
             trader = TradeService(
+                trade_indicators,
                 pair_settings,
                 prices_repository,
                 orders_buy_repository,
                 orders_sell_repository,
             )
-
-            await trader.check_sell_orders()
-            await trader.check_buy_order()
+            await trader.analyzer()
 
 
 async def run_background_processes():
