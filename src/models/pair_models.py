@@ -90,6 +90,14 @@ class TradingSettings(BaseAppModel):
         nullable=False,
         default=2,
     )
+    auto_buy_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+    auto_sell_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
     trading_pairs: Mapped[list[TradingPairSettings]] = relationship(
         "TradingPairSettings",
         back_populates="trading_setting",
