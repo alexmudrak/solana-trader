@@ -3,6 +3,7 @@ const TOKENS_ENDPOINT = `${API_BASE_URL}/tokens`
 const PRICES_ENDPOINT = `${API_BASE_URL}/prices`
 const ORDERS_ENDPOINT = `${API_BASE_URL}/orders`
 const PAIRS_API_ENDPOINT = `${API_BASE_URL}/pairs`
+const CHANGE_ACTIVE_PAIR_API_ENDPOINT = `${PAIRS_API_ENDPOINT}/change_active`
 const SETTINGS_ENDPOINT = `${PAIRS_API_ENDPOINT}/settings`
 
 let chart = null
@@ -33,6 +34,7 @@ async function fetchPairs() {
     data.forEach((pair) => {
         tradingSettings[pair.id] = pair.trading_setting
         tradingPairs[pair.id] = {
+            is_active: pair.is_active,
             from_token: pair.from_token.name,
             to_token: pair.to_token.name,
         }
@@ -222,6 +224,13 @@ function updateChart() {
     }
 }
 
+function updateHiddenSettingsValue(checkboxId, hiddenInputId) {
+    const checkbox = document.getElementById(checkboxId)
+    const hiddenInput = document.getElementById(hiddenInputId)
+
+    hiddenInput.value = checkbox.checked ? 'true' : 'false'
+}
+
 async function renderTable(currentPrice, orders_data) {
     if (!selectedToken) {
         console.warn('No token selected')
@@ -291,6 +300,21 @@ async function renderPairSettings() {
         return
     }
     const settings = tradingSettings[selectedToken]
+    const pair_settings = tradingPairs[selectedToken]
+
+    if (pair_settings) {
+        const checkbox = document.getElementById('is-active-trade')
+        const checkbox_value = document.getElementById('is-active-value')
+        if (checkbox) {
+            checkbox.setAttribute(
+                'hx-patch',
+                `${CHANGE_ACTIVE_PAIR_API_ENDPOINT}/${selectedToken}`,
+            )
+            checkbox.checked = pair_settings.is_active
+            checkbox_value.value = !pair_settings.is_active
+            htmx.process(checkbox)
+        }
+    }
 
     if (settings) {
         document.getElementById('take-profit').value =
@@ -302,6 +326,11 @@ async function renderPairSettings() {
         document.getElementById('rsi-sell').value = settings.rsi_sell_threshold
         document.getElementById('rsi-period').value = settings.rsi_time_period
         document.getElementById('buy-amount').value = settings.buy_amount
+        document.getElementById('auto-buy').checked = settings.auto_buy_enabled
+        document.getElementById('auto-sell').checked = settings.auto_sell_enabled
+        document.getElementById('auto-buy-value').value = settings.auto_buy_enabled
+        document.getElementById('auto-sell-value').value =
+            settings.auto_sell_enabled
         document.getElementById('max-orders').value =
             settings.buy_max_orders_threshold
         const form = document.getElementById('settings-form')
@@ -329,13 +358,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const collapsibleButton = document.querySelector('.collapsible')
     const content = document.querySelector('.content')
 
-    collapsibleButton.addEventListener('click', () => {
-        fetchPairs()
+    collapsibleButton.addEventListener('click', async () => {
+        await fetchPairs()
         renderPairSettings()
         if (content.style.display === 'block') {
             content.style.display = 'none'
         } else {
             content.style.display = 'block'
         }
+    })
+
+    const checkbox = document.getElementById('is-active-trade')
+    const hiddenInput = document.getElementById('is-active-value')
+
+    checkbox.addEventListener('change', () => {
+        hiddenInput.value = checkbox.checked ? 'true' : 'false'
     })
 })
