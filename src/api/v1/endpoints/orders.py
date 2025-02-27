@@ -36,11 +36,12 @@ async def buy_tokens(
             detail=f"Trade pair id {pair_id} not found",
         )
 
+    # TODO: Add order fee
     result = await order_buy_repository.create(
         from_token_id=pair.from_token_id,
         to_token_id=pair.to_token_id,
         amount=request.amount,
-        price=request.amount * request.price,
+        price=request.price,
     )
 
     return BuyTokensResponse(
@@ -70,11 +71,12 @@ async def sell_tokens(
             detail=f"Trade pair id {pair_id} not found",
         )
 
+    # TODO: Add order fee
     result = await order_sell_repository.create(
         from_token_id=pair.to_token_id,
         to_token_id=pair.from_token_id,
         amount=request.amount,
-        price=request.amount * request.price,
+        price=request.price,
         buy_order_id=request.order_id,
     )
 

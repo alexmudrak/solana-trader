@@ -133,9 +133,9 @@ class TradeService:
             )
 
             # TODO: Implement create order on DEX
-            if sell_price_with_fee < stop_loss_price:
+            if order_sell_price < stop_loss_price:
                 print(
-                    f"[SELL] Sell order for order ID {order.id} triggered by stop loss."
+                    f"[SELL] {stop_loss_price:.2f} Sell order for order ID {order.id} triggered by stop loss."
                 )
                 await self.order_sell.create(
                     order.to_token_id,
@@ -147,26 +147,31 @@ class TradeService:
                 print(
                     f"[SELL] Sell order created due to stop loss for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
-                    f"Sell price: {sell_price_with_fee:.2f}, "
+                    f"Sell price: {order_sell_price:.2f}, "
                     f"Stop loss price: {stop_loss_price:.2f}"
                 )
-            elif sell_price_with_fee >= take_profit_price:
+            elif order_sell_price >= take_profit_price:
                 await self.order_sell.create(
                     order.to_token_id,
                     order.from_token_id,
                     order.amount,
-                    order_sell_price,
+                    sell_price_with_fee,
                     order.id,
                 )
                 print(
                     f"[SELL] Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
-                    f"Sell price: {sell_price_with_fee:.2f}, "
+                    f"Sell price: {order_sell_price:.2f}, "
+                    f"TAKE PROF: {take_profit_price / order.amount:.2f} "
                     f"Profit: {order_sell_price - order_buy_price:.2f}"
                 )
             else:
                 print(
-                    f"[SELL] Order ID {order.id}: Not profitable to sell or stop-loss not triggered."
+                    f"[SELL] Order ID {order.id}: Not profitable to sell or stop-loss not triggered. "
+                    f"Buy price: {order_buy_price:.2f}, "
+                    f"Sell price: {order_sell_price:.2f}, "
+                    f"TAKE PROF: {take_profit_price / order.amount:.2f} "
+                    f"Profit: {order_sell_price - order_buy_price:.2f}"
                 )
 
     async def check_buy_order(
@@ -174,20 +179,18 @@ class TradeService:
         opened_orders: list[OrderBuy],
         buy_price_with_fee: float,
     ):
-        buy_price = self.buy_amount * buy_price_with_fee
-
         # TODO: Implement create order on DEX
         if len(opened_orders) < self.buy_max_orders_threshlod:
             await self.order_buy.create(
                 self.base_token.id,
                 self.target_token.id,
                 self.buy_amount,
-                buy_price,
+                buy_price_with_fee,
             )
 
             print(
                 f"[BUY] Buy order created for {self.buy_amount} "
-                f"{self.target_token.name} at price {buy_price:.2f}."
+                f"{self.target_token.name} at price {buy_price_with_fee:.2f}."
             )
         else:
             print(
