@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 from itertools import groupby
 
+from loguru import logger
+
 from models.orders_models import OrderBuy
 from models.pair_models import TradingPairSettings
 from models.prices_models import Price
@@ -83,8 +85,14 @@ class TradeService:
         buy_price_with_fee = last_price * self.market_fee
         sell_price_with_fee = last_price / self.market_fee
 
-        print(f"[ANALYZER] BUY price with FEE: {buy_price_with_fee:.2f}")
-        print(f"[ANALYZER] SELL price with FEE: {sell_price_with_fee:.2f}")
+        logger.opt(ansi=True).log(
+            "ANALYZER",
+            f"<green>BUY</green> price with FEE: <white>{buy_price_with_fee:.2f}</white>",
+        )
+        logger.opt(colors=True).log(
+            "ANALYZER",
+            f"<red>SELL</red> price with FEE: <white>{sell_price_with_fee:.2f}</white>",
+        )
 
         time_threshold = datetime.now(UTC) - timedelta(
             minutes=20,
@@ -107,21 +115,38 @@ class TradeService:
         )
 
         opened_orders = await self.order_buy.get_opened_orders()
-        print(f"[ANALYZER] Found {len(opened_orders)} open orders.")
+        logger.opt(colors=True).log(
+            "ANALYZER",
+            f"Found <white>{len(opened_orders)}</white> open orders.",
+        )
+
+        if len(price_list_by_minutes) > 1:
+            previous_price = price_list_by_minutes[-2].value
+            current_price = price_list_by_minutes[-1].value
+            if current_price > previous_price:
+                logger.opt(colors=True).log(
+                    "ANALYZER", "Market is trending <green>UP ⬆️</green>."
+                )
+            elif current_price < previous_price:
+                logger.opt(colors=True).log(
+                    "ANALYZER", "Market is trending <red>DOWN ⬇️</red>."
+                )
 
         if ema_short > ema_long and rsi_value < self.rsi_buy_threshold:
             await self.check_buy_order(opened_orders, buy_price_with_fee)
         elif ema_short < ema_long and rsi_value > self.rsi_sell_threshold:
             await self.check_sell_orders(opened_orders, sell_price_with_fee)
         else:
-            print("[ANALYZER] No trading action taken.")
+            logger.log("ANALYZER", "🛑 No trading action taken.")
 
     async def check_sell_orders(
         self,
         opened_orders: list[OrderBuy],
         sell_price_with_fee: float,
     ):
-        print(f"[SELL] Found {len(opened_orders)} open orders for selling.")
+        logger.log(
+            "SELL", f"Found {len(opened_orders)} open orders for selling."
+        )
 
         for order in opened_orders:
             order_buy_price = order.price * order.amount
@@ -134,8 +159,9 @@ class TradeService:
 
             # TODO: Implement create order on DEX
             if order_sell_price < stop_loss_price:
-                print(
-                    f"[SELL] {stop_loss_price:.2f} Sell order for order ID {order.id} triggered by stop loss."
+                logger.log(
+                    "SELL",
+                    f"{stop_loss_price:.2f} Sell order for order ID {order.id} triggered by stop loss.",
                 )
                 await self.order_sell.create(
                     order.to_token_id,
@@ -144,11 +170,12 @@ class TradeService:
                     sell_price_with_fee,
                     order.id,
                 )
-                print(
-                    f"[SELL] Sell order created due to stop loss for order ID {order.id}. "
+                logger.log(
+                    "SELL",
+                    f"Sell order created due to stop loss for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
-                    f"Stop loss price: {stop_loss_price:.2f}"
+                    f"Stop loss price: {stop_loss_price:.2f}",
                 )
             elif order_sell_price >= take_profit_price:
                 await self.order_sell.create(
@@ -158,20 +185,22 @@ class TradeService:
                     sell_price_with_fee,
                     order.id,
                 )
-                print(
-                    f"[SELL] Sell order created for order ID {order.id}. "
+                logger.log(
+                    "SELL",
+                    f"Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
-                    f"TAKE PROF: {take_profit_price / order.amount:.2f} "
-                    f"Profit: {order_sell_price - order_buy_price:.2f}"
+                    f"Take profit: {take_profit_price / order.amount:.2f} "
+                    f"Profit: {order_sell_price - order_buy_price:.2f}",
                 )
             else:
-                print(
-                    f"[SELL] Order ID {order.id}: Not profitable to sell or stop-loss not triggered. "
+                logger.log(
+                    "SELL",
+                    f"Order ID {order.id}: Not profitable to sell or stop-loss not triggered. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
-                    f"TAKE PROF: {take_profit_price / order.amount:.2f} "
-                    f"Profit: {order_sell_price - order_buy_price:.2f}"
+                    f"Take profit: {take_profit_price / order.amount:.2f} "
+                    f"Profit: {order_sell_price - order_buy_price:.2f}",
                 )
 
     async def check_buy_order(
@@ -188,11 +217,13 @@ class TradeService:
                 buy_price_with_fee,
             )
 
-            print(
-                f"[BUY] Buy order created for {self.buy_amount} "
-                f"{self.target_token.name} at price {buy_price_with_fee:.2f}."
+            logger.log(
+                "BUY",
+                f"Buy order created for {self.buy_amount} "
+                f"{self.target_token.name} at price {buy_price_with_fee:.2f}.",
             )
         else:
-            print(
-                f"[BUY] Cannot create buy order: reached maximum orders threshold ({self.buy_max_orders_threshlod})."
+            logger.log(
+                "BUY",
+                f"Cannot create buy order: reached maximum orders threshold ({self.buy_max_orders_threshlod}).",
             )

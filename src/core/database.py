@@ -1,3 +1,4 @@
+from loguru import logger
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
@@ -24,12 +25,14 @@ async def get_session():
         try:
             yield session
         except Exception as e:
-            print(e)
+            logger.critical(
+                f"An error occurred while processing the session: {e}"
+            )
             await session.rollback()
             raise
         finally:
             try:
                 await session.commit()
             except Exception as e:
-                print(e)
+                logger.critical(f"Error committing session: {e}")
             await session.close()

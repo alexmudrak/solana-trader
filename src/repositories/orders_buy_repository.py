@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +25,7 @@ class OrderBuyRepository:
 
             return orders
         except SQLAlchemyError as e:
-            print(f"Error while fetching opened orders: {e}")
+            logger.warning(f"Error while fetching opened orders: {e}")
             return []
 
     async def get_orders_for_token(
@@ -43,7 +44,9 @@ class OrderBuyRepository:
 
             return orders
         except SQLAlchemyError as e:
-            print(f"Error while fetching orders for token {token_id}: {e}")
+            logger.warning(
+                f"Error while fetching orders for token {token_id}: {e}"
+            )
             return []
 
     async def get_recent_orders_count(
@@ -59,7 +62,7 @@ class OrderBuyRepository:
 
             return count or 0
         except SQLAlchemyError as e:
-            print(f"Error fetching order count: {e}")
+            logger.warning(f"Error fetching order count: {e}")
             return 0
 
     async def create(

@@ -1,5 +1,7 @@
 import asyncio
 
+from loguru import logger
+
 from brokers.jupiter_market import JupiterMarket
 from core.constants import Token
 from core.database import get_session
@@ -36,8 +38,9 @@ async def get_latest_price(pairs_settings: list[TradingPairSettings]):
 
             await prices_repository.create(price, to_token.id)
 
-            print(
-                f"[FETCHER] Current WITHOUT FEE price for {from_token.name} to {to_token.name}: {price:.2f}"
+            logger.opt(colors=True).log(
+                "FETCHER",
+                f"Current <red>WITHOUT FEE</red> price for <underline><b>{from_token.name}</b></underline> to <underline><b>{to_token.name}</b></underline>: <white>{price:.2f}</white>",
             )
 
 
@@ -71,6 +74,6 @@ async def run_background_processes():
             await get_latest_price(all_active_pairs)
             await trade_execution(all_active_pairs)
         except Exception as e:
-            print(f"Error fetching price: {e}")
+            logger.error(f"Error fetching price: {e}")
 
         await asyncio.sleep(settings.app_fetch_price_sleep)
