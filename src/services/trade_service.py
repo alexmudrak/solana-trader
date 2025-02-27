@@ -170,12 +170,16 @@ class TradeService:
                     sell_price_with_fee,
                     order.id,
                 )
-                logger.log(
-                    "SELL",
+                log_message = (
                     f"Sell order created due to stop loss for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
                     f"Stop loss price: {stop_loss_price:.2f}",
+                )
+                logger.log("SELL", log_message)
+                logger.log(
+                    "NOTIF",
+                    log_message,
                 )
             elif order_sell_price >= take_profit_price:
                 await self.order_sell.create(
@@ -185,22 +189,36 @@ class TradeService:
                     sell_price_with_fee,
                     order.id,
                 )
-                logger.log(
-                    "SELL",
+                log_message = (
                     f"Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
                     f"Take profit: {take_profit_price / order.amount:.2f} "
                     f"Profit: {order_sell_price - order_buy_price:.2f}",
                 )
-            else:
                 logger.log(
                     "SELL",
+                    log_message,
+                )
+                logger.log(
+                    "NOTIF",
+                    log_message,
+                )
+            else:
+                log_message = (
                     f"Order ID {order.id}: Not profitable to sell or stop-loss not triggered. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
                     f"Take profit: {take_profit_price / order.amount:.2f} "
                     f"Profit: {order_sell_price - order_buy_price:.2f}",
+                )
+                logger.log(
+                    "SELL",
+                    log_message,
+                )
+                logger.log(
+                    "NOTIF",
+                    log_message,
                 )
 
     async def check_buy_order(
@@ -217,13 +235,21 @@ class TradeService:
                 buy_price_with_fee,
             )
 
-            logger.log(
-                "BUY",
+            log_message = (
                 f"Buy order created for {self.buy_amount} "
                 f"{self.target_token.name} at price {buy_price_with_fee:.2f}.",
             )
-        else:
             logger.log(
                 "BUY",
-                f"Cannot create buy order: reached maximum orders threshold ({self.buy_max_orders_threshlod}).",
+                log_message,
+            )
+            logger.log(
+                "NOTIF",
+                log_message,
+            )
+        else:
+            log_message = f"Cannot create buy order: reached maximum orders threshold ({self.buy_max_orders_threshlod})."
+            logger.log(
+                "BUY",
+                log_message,
             )
