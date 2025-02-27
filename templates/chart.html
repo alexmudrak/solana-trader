@@ -49,6 +49,7 @@
               hx-include="#amount, #token-select, #current-price-value">
             <label for="amount" class="block text-lg font-medium text-gray-700">Amount:</label>
             <input type="number"
+                   step="0.01"
                    id="amount"
                    name="amount"
                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
@@ -83,7 +84,7 @@
                 <div>
                     <label for="stop-loss" class="block text-lg font-medium text-gray-700">Stop Loss Percentage:</label>
                     <input type="number"
-                           step="0.01"
+                           step="0.001"
                            id="stop-loss"
                            name="stop_loss_percentage"
                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"

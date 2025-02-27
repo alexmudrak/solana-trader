@@ -10,10 +10,10 @@ let selectedToken = null
 let previousPrice = null
 let currentPrice = null
 let tradingSettings = {}
+let tradingPairs = {}
 
 async function loadTokens() {
-    const response = await fetch(`${PAIRS_API_ENDPOINT}`)
-    const data = await response.json()
+    const data = await fetchPairs()
     const tokenSelect = document.getElementById('token-select')
 
     data.forEach((pair) => {
@@ -21,10 +21,25 @@ async function loadTokens() {
         option.value = pair.id
         option.textContent = `${pair.from_token.name} -> ${pair.to_token.name}`
         tokenSelect.appendChild(option)
-        tradingSettings[pair.id] = pair.trading_setting
     })
 }
 
+async function fetchPairs() {
+    const response = await fetch(`${PAIRS_API_ENDPOINT}`)
+    if (response.status !== 200) {
+        return []
+    }
+    const data = await response.json()
+    data.forEach((pair) => {
+        tradingSettings[pair.id] = pair.trading_setting
+        tradingPairs[pair.id] = {
+            from_token: pair.from_token.name,
+            to_token: pair.to_token.name,
+        }
+    })
+
+    return data
+}
 async function fetchPrices(token_id) {
     const response = await fetch(`${PRICES_ENDPOINT}/${token_id}`)
     if (response.status !== 200) {
@@ -44,7 +59,6 @@ async function renderChart() {
         console.warn('No token selected')
         return
     }
-    await loadTokens()
     const data = await fetchPrices(selectedToken)
     const orders_data = await fetchOrders(selectedToken)
 
@@ -55,7 +69,7 @@ async function renderChart() {
     const availableDates = new Set(data.created.map((date) => date.slice(0, 16)))
     const buyDataset = orders_data
         .map((row) => {
-            const pricePerCount = row.price / row.amount
+            const pricePerCount = row.price
             const dateWithoutSeconds = row.created.slice(0, 16)
             return availableDates.has(dateWithoutSeconds)
                 ? { x: row.created, y: pricePerCount }
@@ -67,7 +81,7 @@ async function renderChart() {
         ...orders_data.map((row) =>
             row.sells
                 .map((sell) => {
-                    const pricePerAmount = sell.price / sell.amount
+                    const pricePerAmount = sell.price
                     const dateWithoutSeconds = sell.created.slice(0, 16)
                     return availableDates.has(dateWithoutSeconds)
                         ? { x: sell.created, y: pricePerAmount }
@@ -81,7 +95,7 @@ async function renderChart() {
         labels: data.created,
         datasets: [
             {
-                label: `Token ${selectedToken} / USDC`,
+                label: `Price ${tradingPairs[selectedToken].from_token} / ${tradingPairs[selectedToken].to_token}`,
                 data: data.prices,
                 order: 2,
                 borderColor: 'rgba(75, 192, 192, 1)',
@@ -90,7 +104,7 @@ async function renderChart() {
                 fill: false,
             },
             {
-                label: `BUY Token ${selectedToken} / USDC`,
+                label: `Buy ${tradingPairs[selectedToken].from_token} / ${tradingPairs[selectedToken].to_token}`,
                 type: 'bubble',
                 order: 1,
                 data: buyDataset,
@@ -102,7 +116,7 @@ async function renderChart() {
                 fill: false,
             },
             {
-                label: `SELL Token ${selectedToken} / USDC`,
+                label: `Sell ${tradingPairs[selectedToken].to_token} / ${tradingPairs[selectedToken].from_token}`,
                 type: 'bubble',
                 order: 1,
                 data: sellDataset,
@@ -128,6 +142,7 @@ async function renderChart() {
             type: 'line',
             data: chartData,
             options: {
+                responsive: true,
                 scales: {
                     x: {
                         type: 'time',
@@ -142,6 +157,18 @@ async function renderChart() {
                         },
                     },
                 },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems, data) {
+                                return 'TEST Title'
+                            },
+                            label: function(tooltipItems, data) {
+                                return 'TEST label'
+                            },
+                        },
+                    },
+                },
             },
         })
     }
@@ -150,7 +177,6 @@ async function renderChart() {
     document.getElementById('price-container').style.display = 'block'
     document.getElementById('buttons-container').style.display = 'flex'
 
-    await renderPairSettings()
     await renderTable(currentPrice, orders_data)
 }
 function updatePriceDisplay(currentPrice) {
@@ -186,6 +212,7 @@ function updateChart() {
         window.location.href = '/create-trader'
     } else if (selectedToken) {
         renderChart()
+        renderPairSettings()
         document.getElementById('buy-button').disabled = false
     } else {
         document.getElementById('priceChart').style.display = 'none'
@@ -220,8 +247,8 @@ async function renderTable(currentPrice, orders_data) {
 
         const profit =
             row.sells.length > 0
-                ? lastSellPrice - row.price
-                : row.amount * currentPrice - row.price
+                ? lastSellPrice * row.amount - row.price * row.amount
+                : currentPrice * row.amount - row.price * row.amount
 
         totalProfit += profit
 
@@ -229,16 +256,22 @@ async function renderTable(currentPrice, orders_data) {
             <td class="border-b px-4 py-2">${new Date(row.created).toLocaleString()}</td>
             <td class="border-b px-4 py-2">${row.token}</td>
             <td class="border-b px-4 py-2">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-            <span>${row.amount}</span>
-            <div style="font-size: 0.8em; line-height: 1; text-align: right;">
-                <div>${(row.price / row.amount).toFixed(2)}</div>
-                <div>${(lastSellPrice / row.amount).toFixed(2)}</div>
-            </div>
-        </div>
+                    <span>${row.amount}</span>
             </td>
 
-            <td class="border-b px-4 py-2">${row.price.toFixed(2)}</td>
+            <td class="border-b px-4 py-2">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+                <div style="font-size: 0.8em; line-height: 1; text-align: right; margin-right: 8px;">
+                    <div>${(row.price * row.amount).toFixed(2)}</div>
+                    <div>${(lastSellPrice * row.amount).toFixed(2)}</div>
+                </div>
+
+                <div style="font-size: 0.8em; line-height: 1; text-align: right;">
+                    <div>${row.price.toFixed(2)}</div>
+                    <div>${lastSellPrice.toFixed(2)}</div>
+                </div>
+            </div>
+            </td>
             <td class="border-b px-4 py-2">${profit.toFixed(2)}</</td >
             <td class="border-b px-4 py-2">${sellButton}
                 <input type="hidden" id="order-id-${row.id}" name="order_id" value="${row.id}" />
@@ -297,6 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const content = document.querySelector('.content')
 
     collapsibleButton.addEventListener('click', () => {
+        fetchPairs()
+        renderPairSettings()
         if (content.style.display === 'block') {
             content.style.display = 'none'
         } else {
