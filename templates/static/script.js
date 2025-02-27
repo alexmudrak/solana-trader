@@ -145,6 +145,9 @@ async function renderChart() {
             data: chartData,
             options: {
                 responsive: true,
+                interaction: {
+                    mode: 'point',
+                },
                 scales: {
                     x: {
                         type: 'time',
@@ -163,10 +166,22 @@ async function renderChart() {
                     tooltip: {
                         callbacks: {
                             title: function(tooltipItems, data) {
-                                return 'TEST Title'
+                                let dataset = tooltipItems[0].dataset
+                                if (dataset.order === 2) {
+                                    return tooltipItems[0].dataset.label
+                                } else {
+                                    return tooltipItems[0].label
+                                }
                             },
                             label: function(tooltipItems, data) {
-                                return 'TEST label'
+                                return tooltipItems.parsed.y.toFixed(2)
+                            },
+                            footer: function(tooltipItems, data) {
+                                const timestamp = tooltipItems[0].parsed.x
+                                const date = new Date(timestamp)
+                                const formattedDate = date.toLocaleString()
+
+                                return formattedDate
                             },
                         },
                     },
