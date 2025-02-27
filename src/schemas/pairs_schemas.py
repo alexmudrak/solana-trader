@@ -9,8 +9,13 @@ class CreatePairsRequest(BaseModel):
     trading_setting_id: int
 
 
+class ChangeIsActivePairsRequest(BaseModel):
+    is_active: bool
+
+
 class PairsResponse(BaseModel):
     id: int
+    is_active: bool
     from_token: TokenResponse
     to_token: TokenResponse
     trading_setting: "PairsSettingsResponse"
@@ -31,6 +36,8 @@ class PairsSettingsResponse(BaseModel):
     rsi_time_period: int
     buy_amount: float
     buy_max_orders_threshold: int
+    auto_buy_enabled: bool | None
+    auto_sell_enabled: bool | None
 
     class Config:
         from_attributes = True
@@ -50,3 +57,5 @@ class UpdatePairSettingsRequest(BaseModel):
     short_ema_time_period: int
     stop_loss_percentage: float
     take_profit_percentage: float
+    auto_buy_enabled: bool
+    auto_sell_enabled: bool

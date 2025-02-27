@@ -70,3 +70,26 @@ class PairsRepository:
         )
 
         return obj
+
+    async def update_active(
+        self, pair_id: int, is_active: bool
+    ) -> TradingPairSettings:
+        stmt = (
+            select(TradingPairSettings)
+            .options(
+                selectinload(TradingPairSettings.from_token),
+                selectinload(TradingPairSettings.to_token),
+                selectinload(TradingPairSettings.trading_setting),
+            )
+            .where(TradingPairSettings.id == pair_id)
+        )
+        result = await self.session.execute(stmt)
+        obj = result.scalars().first()
+
+        if not obj:
+            raise ValueError(f"No trading pair found for ID: {pair_id}")
+
+        obj.is_active = is_active
+        await self.session.flush()
+
+        return obj

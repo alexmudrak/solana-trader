@@ -5,6 +5,7 @@ from core.database import get_session
 from repositories.pairs_repository import PairsRepository
 from repositories.pairs_settings_repository import PairsSettingsRepository
 from schemas.pairs_schemas import (
+    ChangeIsActivePairsRequest,
     CreatePairsRequest,
     CreatePairsSettingsRequest,
     PairsResponse,
@@ -40,6 +41,22 @@ async def create_pairs(
         request.from_token_id,
         request.to_token_id,
         request.trading_setting_id,
+    )
+
+    return result
+
+
+@router.patch("/change_active/{pair_id}", response_model=PairsResponse)
+async def change_active_pairs(
+    pair_id,
+    request: ChangeIsActivePairsRequest,
+    db_session: AsyncSession = Depends(get_session),
+):
+    pairs_repository = PairsRepository(db_session)
+
+    result = await pairs_repository.update_active(
+        pair_id,
+        request.is_active,
     )
 
     return result
