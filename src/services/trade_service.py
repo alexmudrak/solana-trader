@@ -3,6 +3,7 @@ from itertools import groupby
 
 from loguru import logger
 
+from brokers.abstract_market import AbstractMarket
 from models.orders_models import OrderBuy
 from models.pair_models import TradingPairSettings
 from models.prices_models import Price
@@ -10,18 +11,23 @@ from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
 from repositories.prices_repository import PricesRepository
 from schemas.trade_service_schemas import PriceByMinute
+from services.wallet_service import WalletService
 from utils.trade_indicators import TradeIndicators
 
 
 class TradeService:
     def __init__(
         self,
+        wallet_service: WalletService,
+        broker_service: AbstractMarket,
         trade_indicators: TradeIndicators,
         pair_settings: TradingPairSettings,
         prices_repository: PricesRepository,
         order_buy_repository: OrderBuyRepository,
         order_sell_repository: OrderSellRepository,
     ):
+        self.wallet = wallet_service
+        self.broker_service = broker_service
         self.trade_indicators = trade_indicators
         self.prices = prices_repository
         self.order_buy = order_buy_repository
@@ -223,6 +229,9 @@ class TradeService:
         buy_price_with_fee: float,
     ):
         # TODO: Implement create order on DEX
+        # TODO: Make swap transaction -> Dex client
+        # TODO: Check wallet balance -> Wallet
+        # TODO: Send transaction -> Wallet
         if len(opened_orders) < self.buy_max_orders_threshlod:
             await self.order_buy.create(
                 self.base_token.id,
