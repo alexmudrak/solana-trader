@@ -25,4 +25,9 @@ def setup_logger():
         diagnose=True,
     )
 
-    logger.add(notifier.notify, level="NOTIF", filter={"apprise": False})
+    logger.add(
+        notifier.notify,
+        level="NOTIF",
+        filter={"apprise": False},
+        format="{message}\n\n{time:YYYY-MM-DD at HH:mm:ss}",
+    )
