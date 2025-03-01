@@ -33,8 +33,8 @@ async def get_latest_price(
         from_token = Token.USDC
 
         result = await broker_service.get_price(
-            to_tokens_list,
-            from_token.value,
+            from_token=from_token.value,
+            to_tokens=to_tokens_list,
         )
         for pair_setting in pairs_settings:
             to_token = pair_setting.to_token

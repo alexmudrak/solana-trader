@@ -29,5 +29,5 @@ def setup_logger():
         notifier.notify,
         level="NOTIF",
         filter={"apprise": False},
-        format="{message}\n\n{time:YYYY-MM-DD at HH:mm:ss}",
+        format="{message}\n\n\n{time:YYYY-MM-DD at HH:mm:ss}",
     )

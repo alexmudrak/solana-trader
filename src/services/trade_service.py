@@ -199,8 +199,8 @@ class TradeService:
                     f"Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
-                    f"Take profit: {take_profit_price / order.amount:.2f} "
-                    f"Profit: {order_sell_price - order_buy_price:.2f}"
+                    f"Take profit: {order_sell_price - order_buy_price:.2f}. "
+                    f"Price profit: {take_profit_price / order.amount:.2f}"
                 )
                 logger.log(
                     "SELL",
@@ -215,8 +215,8 @@ class TradeService:
                     f"Order ID {order.id}: Not profitable to sell or stop-loss not triggered. "
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
-                    f"Take profit: {take_profit_price / order.amount:.2f} "
-                    f"Profit: {order_sell_price - order_buy_price:.2f}"
+                    f"Take profit: {order_sell_price - order_buy_price:.2f}. "
+                    f"Price profit: {take_profit_price / order.amount:.2f}"
                 )
                 logger.log(
                     "SELL",
@@ -242,6 +242,7 @@ class TradeService:
 
             log_message = (
                 f"Buy order created for {self.buy_amount} "
+                f"({buy_price_with_fee * self.buy_amount:.2f}) "
                 f"{self.target_token.name} at price {buy_price_with_fee:.2f}."
             )
             logger.log(
