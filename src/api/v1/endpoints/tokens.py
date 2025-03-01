@@ -32,6 +32,7 @@ async def create_token(
     result = await tokens_repository.create(
         request.name,
         request.address,
+        request.decimals,
     )
 
     return result

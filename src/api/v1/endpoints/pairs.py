@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,11 +38,15 @@ async def create_pairs(
     #       only USDC -> TOKEN
     request.from_token_id = 1
     pairs_repository = PairsRepository(db_session)
+    pairs_settings_repository = PairsSettingsRepository(db_session)
 
+    trading_setting = await pairs_settings_repository.create(
+        f"Setting {time.time()}"
+    )
     result = await pairs_repository.create(
         request.from_token_id,
         request.to_token_id,
-        request.trading_setting_id,
+        trading_setting.id,
     )
 
     return result

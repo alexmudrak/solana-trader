@@ -1,4 +1,4 @@
-from sqlalchemy import String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import BaseAppModel
@@ -16,4 +16,8 @@ class Token(BaseAppModel):
         String(128),
         nullable=False,
         unique=True,
+    )
+    decimals: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
     )

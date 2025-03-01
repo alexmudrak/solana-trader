@@ -28,10 +28,12 @@ class TokensRepository:
         self,
         name: str,
         address: str,
+        decimals: int,
     ) -> Token:
         obj = Token(
             name=name,
             address=address,
+            decimals=decimals,
         )
         self.session.add(obj)
         await self.session.flush()

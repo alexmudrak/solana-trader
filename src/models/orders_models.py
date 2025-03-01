@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey
+from sqlalchemy import Float, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import BaseAppModel
@@ -16,8 +16,12 @@ class OrderBuy(BaseAppModel):
         ForeignKey("tokens.id"),
         nullable=False,
     )
-    amount: Mapped[float] = mapped_column(
-        Float,
+    from_token_amount: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    to_token_amount: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
     )
     price: Mapped[float] = mapped_column(
@@ -47,8 +51,12 @@ class OrderSell(BaseAppModel):
         ForeignKey("tokens.id"),
         nullable=False,
     )
-    amount: Mapped[float] = mapped_column(
-        Float,
+    from_token_amount: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    to_token_amount: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
     )
     price: Mapped[float] = mapped_column(

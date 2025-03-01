@@ -15,11 +15,9 @@
         const settings = await settings_response.json();
         const fromTokenSelect = document.getElementById('from-token');
         const toTokenSelect = document.getElementById('to-token');
-        const settingsSelect = document.getElementById('trading-settings');
 
         fromTokenSelect.innerHTML = '<option value=""></option>';
         toTokenSelect.innerHTML = '<option value=""></option>';
-        settingsSelect.innerHTML = '<option value=""></option>';
 
         tokens.forEach(token => {
             const optionFrom = document.createElement('option');
@@ -31,12 +29,6 @@
             optionTo.value = token.id;
             optionTo.textContent = token.name;
             toTokenSelect.appendChild(optionTo);
-        });
-        settings.forEach(setting => {
-            const optionFrom = document.createElement('option');
-            optionFrom.value = setting.id;
-            optionFrom.textContent = setting.name;
-            settingsSelect.appendChild(optionFrom);
         });
     }
 
@@ -67,7 +59,7 @@
           method="post"
           hx-post="/api/v1/pairs/"
           hx-ext='json-enc'
-          hx-include="#from-token, #to-token, #pairs-settings"
+          hx-include="#from-token, #to-token"
           hx-target="#message">
         <label for="from-token" class="block text-lg font-medium text-gray-700">From Token:</label>
         <select id="from-token"
@@ -77,12 +69,6 @@
         <label for="to-token" class="block text-lg font-medium text-gray-700 mt-4">To Token:</label>
         <select id="to-token"
                 name="to_token_id"
-                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                required></select>
-        <label for="trading-settings"
-               class="block text-lg font-medium text-gray-700 mt-4">Settings:</label>
-        <select id="trading-settings"
-                name="trading_setting_id"
                 class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                 required></select>
         <div class="w-full flex justify-center mt-4">

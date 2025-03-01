@@ -6,7 +6,6 @@ from schemas.tokens_schemas import TokenResponse
 class CreatePairsRequest(BaseModel):
     from_token_id: int
     to_token_id: int
-    trading_setting_id: int
 
 
 class ChangeIsActivePairsRequest(BaseModel):

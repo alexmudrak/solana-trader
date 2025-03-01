@@ -13,7 +13,7 @@ def setup_logger():
     logger.level("SELL", no=40, color="<red>")
     logger.level("BUY", no=41, color="<green>")
     logger.level("INDICATOR", no=42, color="<light-yellow>")
-    logger.level("NOTIF", no=43)
+    logger.level("NOTIF", no=999)
 
     logger.add(
         sys.stderr,

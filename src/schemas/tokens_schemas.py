@@ -14,6 +14,7 @@ class SellTokensRequest(BuyTokensRequest):
 class TokenRequest(BaseModel):
     name: str
     address: str
+    decimals: int
 
 
 class TokenResponse(BaseModel):
