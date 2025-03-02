@@ -4,6 +4,7 @@ from itertools import groupby
 from loguru import logger
 
 from brokers.abstract_market import AbstractMarket
+from core.constants import MARKET_FEE
 from models.orders_models import OrderBuy
 from models.pair_models import TradingPairSettings
 from models.prices_models import Price
@@ -37,7 +38,7 @@ class TradeService:
         self.target_token = pair_settings.to_token
         # TODO: Need to remove in the production and
         #       get fee from FetcherService
-        self.market_fee = 1.001  # 0.1%
+        self.market_fee = MARKET_FEE
         self.trading_setting = pair_settings.trading_setting
         self.take_profit_percentage = (
             self.trading_setting.take_profit_percentage
@@ -61,9 +62,12 @@ class TradeService:
             self.trading_setting.rsi_time_period
         )  # default 14, in minutes
         self.buy_amount = self.trading_setting.buy_amount  # default 0.1
-        self.buy_max_orders_threshlod = (
+        self.buy_max_orders_threshold = (
             self.trading_setting.buy_max_orders_threshold
         )  # default 2
+        # TODO: Move to pair settings
+        self.buy_max_orders_in_last_period = 1
+        self.buy_check_period_minutes = 60
 
     def get_prices_list_by_minutes(
         self, prices: list[Price]
@@ -308,14 +312,36 @@ class TradeService:
         opened_orders: list[OrderBuy],
         buy_price_with_fee: float,
     ):
-        if len(opened_orders) > self.buy_max_orders_threshlod:
+        total_open_orders = len(opened_orders)
+        if total_open_orders > self.buy_max_orders_threshold:
             log_message = (
                 "Cannot create buy order: reached maximum "
-                f"orders threshold ({self.buy_max_orders_threshlod})."
+                f"orders threshold ({self.buy_max_orders_threshold})."
             )
             logger.log(
                 "BUY",
                 log_message,
+            )
+            return
+
+        current_time = datetime.now(UTC)
+        time_threshold = current_time - timedelta(
+            minutes=self.buy_check_period_minutes
+        )
+        naive_time_threshold = time_threshold.replace(tzinfo=None)
+
+        recent_orders = [
+            order
+            for order in opened_orders
+            if order.created >= naive_time_threshold
+        ]
+
+        if len(recent_orders) >= self.buy_max_orders_in_last_period:
+            logger.warning(
+                "Cannot create buy order: reached maximum orders threshold "
+                f"of {self.buy_max_orders_in_last_period} "
+                f"within the last {self.buy_check_period_minutes} minutes. "
+                f"Current recent orders: {len(recent_orders)}."
             )
             return
 
