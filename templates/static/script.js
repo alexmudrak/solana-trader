@@ -146,7 +146,9 @@ async function renderChart() {
             options: {
                 responsive: true,
                 interaction: {
-                    mode: 'point',
+                    intersect: false,
+                    mode: 'nearest',
+                    axis: 'xy'
                 },
                 scales: {
                     x: {
