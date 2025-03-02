@@ -4,7 +4,6 @@ from pydantic import BaseModel
 class BuyTokensRequest(BaseModel):
     pair_id: int
     amount: float
-    price: float
 
 
 class SellTokensRequest(BuyTokensRequest):

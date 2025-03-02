@@ -53,6 +53,29 @@ class OrderBuyRepository:
             )
             return []
 
+    async def get_order_by_id(
+        self,
+        order_id: int,
+    ) -> OrderBuy | None:
+        try:
+            stmt = (
+                select(OrderBuy)
+                .options(
+                    selectinload(OrderBuy.from_token),
+                    selectinload(OrderBuy.to_token),
+                )
+                .where(OrderBuy.id == order_id)
+            )
+            result = await self.session.execute(stmt)
+            order = result.scalars().one_or_none()
+
+            return order
+        except SQLAlchemyError as e:
+            logger.warning(
+                f"Error while fetching order for id {order_id}: {e}"
+            )
+            return None
+
     async def get_recent_orders_count(
         self, token_id: int, time_threshold: datetime
     ) -> int:

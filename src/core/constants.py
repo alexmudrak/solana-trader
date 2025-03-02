@@ -1,5 +1,7 @@
 from enum import Enum
 
+MARKET_FEE = 1.001  # 0.1%
+
 
 class Token(Enum):
     SOL = "So11111111111111111111111111111111111111112"
