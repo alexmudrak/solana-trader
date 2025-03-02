@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from loguru import logger
 
@@ -89,6 +90,9 @@ async def run_background_processes():
                 wallet_service, broker_service, all_active_pairs
             )
         except Exception as e:
-            logger.error(f"Error fetching price: {e}")
+            exception = sys.exc_info()
+            logger.opt(exception=exception).error(
+                f"Error fetching price: {e}", exec
+            )
 
         await asyncio.sleep(settings.app_fetch_price_sleep)

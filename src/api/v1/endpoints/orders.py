@@ -127,14 +127,14 @@ async def get_orders(
             status=OrderStatus.OK,
             token=order.to_token.name,
             action=OrderAction.BUY,
-            amount=order.amount,
+            amount=order.to_token_amount / order.to_token.decimals,
             price=order.price,
             sells=[
                 SellOrderDetails(
                     id=sell.id,
                     created=sell.created,
                     price=sell.price,
-                    amount=sell.amount,
+                    amount=sell.to_token_amount / sell.to_token.decimals,
                 )
                 for sell in order.sells
             ],

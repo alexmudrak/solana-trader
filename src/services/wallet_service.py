@@ -1,8 +1,10 @@
+import asyncio
 from base64 import b64decode
 from typing import Any
 
 import base58
 from loguru import logger
+from solana.exceptions import SolanaRpcException
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.types import TokenAccountOpts, TxOpts
 from solders import message
@@ -39,16 +41,25 @@ class WalletService:
                 f"Wallet balance for {self.pub_key}: {wallet_balance.value}"
             )
 
-            token_balance = (
-                await client.get_token_accounts_by_owner_json_parsed(
-                    self.pub_key,
-                    TokenAccountOpts(
-                        mint=Pubkey.from_string(token.address),
-                    ),
-                )
-            )
+            token_balance = None
+            for try_num in range(1, 10):
+                logger.warning(f"Try to get balance - {try_num}...")
+                try:
+                    await asyncio.sleep(2)
+                    token_balance = (
+                        await client.get_token_accounts_by_owner_json_parsed(
+                            self.pub_key,
+                            TokenAccountOpts(
+                                mint=Pubkey.from_string(token.address),
+                            ),
+                        )
+                    )
+                    if token_balance:
+                        break
+                except SolanaRpcException:
+                    continue
 
-            if not token_balance.value:
+            if not token_balance or not token_balance.value:
                 logger.warning(
                     f"No token accounts found for token: {token.name} "
                     f"owned by wallet: {self.pub_key}"
@@ -79,7 +90,7 @@ class WalletService:
                 )
 
             token_amount_data_value = token_amount_data.get("amount")
-            if not isinstance(token_amount_data_value, int):
+            if not isinstance(token_amount_data_value, (int, str)):
                 logger.critical(
                     "Expected token amount to be int or str but got: "
                     f"{type(token_amount_data_value).__name__}"
@@ -90,7 +101,7 @@ class WalletService:
                 amount=wallet_balance.value,
                 token=WalletTokenBalance(
                     name=token.name,
-                    amount=token_amount_data_value,
+                    amount=int(token_amount_data_value),
                 ),
             )
             logger.info(f"Successfully retrieved balances: {result}")

@@ -17,7 +17,11 @@ class OrderBuyRepository:
         try:
             stmt = (
                 select(OrderBuy)
-                .options(selectinload(OrderBuy.sells))
+                .options(
+                    selectinload(OrderBuy.sells),
+                    selectinload(OrderBuy.from_token),
+                    selectinload(OrderBuy.to_token),
+                )
                 .where(OrderBuy.sells == None)  # noqa: E711
             )
             result = await self.session.execute(stmt)
@@ -69,13 +73,15 @@ class OrderBuyRepository:
         self,
         from_token_id: int,
         to_token_id: int,
-        amount: float,
+        from_token_amount: int,
+        to_token_amount: int,
         price: float,
     ) -> OrderBuy:
         obj = OrderBuy(
             from_token_id=from_token_id,
             to_token_id=to_token_id,
-            amount=amount,
+            from_token_amount=from_token_amount,
+            to_token_amount=to_token_amount,
             price=price,
         )
         self.session.add(obj)

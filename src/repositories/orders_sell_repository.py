@@ -11,14 +11,16 @@ class OrderSellRepository:
         self,
         from_token_id: int,
         to_token_id: int,
-        amount: float,
+        from_token_amount: int,
+        to_token_amount: int,
         price: float,
         buy_order_id: int,
     ) -> OrderSell:
         obj = OrderSell(
             from_token_id=from_token_id,
             to_token_id=to_token_id,
-            amount=amount,
+            from_token_amount=from_token_amount,
+            to_token_amount=to_token_amount,
             price=price,
             buy_order_id=buy_order_id,
         )

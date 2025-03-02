@@ -7,6 +7,7 @@ from brokers.abstract_market import AbstractMarket
 from models.orders_models import OrderBuy
 from models.pair_models import TradingPairSettings
 from models.prices_models import Price
+from models.token_models import Token
 from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
 from repositories.prices_repository import PricesRepository
@@ -139,14 +140,26 @@ class TradeService:
                 )
 
         if ema_short > ema_long and rsi_value < self.rsi_buy_threshold:
-            await self.check_buy_order(opened_orders, buy_price_with_fee)
+            await self.check_buy_order(
+                self.base_token,
+                self.target_token,
+                opened_orders,
+                buy_price_with_fee,
+            )
         elif ema_short < ema_long and rsi_value > self.rsi_sell_threshold:
-            await self.check_sell_orders(opened_orders, sell_price_with_fee)
+            await self.check_sell_orders(
+                self.target_token,
+                self.base_token,
+                opened_orders,
+                sell_price_with_fee,
+            )
         else:
             logger.log("ANALYZER", "🛑 No trading action taken.")
 
     async def check_sell_orders(
         self,
+        from_token: Token,
+        to_token: Token,
         opened_orders: list[OrderBuy],
         sell_price_with_fee: float,
     ):
@@ -155,24 +168,59 @@ class TradeService:
         )
 
         for order in opened_orders:
-            order_buy_price = order.price * order.amount
-            order_sell_price = sell_price_with_fee * order.amount
+            order_amount = order.to_token_amount / order.to_token.decimals
+            order_buy_price = order.price * order_amount
+            order_sell_price = sell_price_with_fee * order_amount
 
             stop_loss_price = order_buy_price * (1 - self.stop_loss_percentage)
             take_profit_price = order_buy_price * (
                 1 + self.take_profit_percentage
             )
+            receive_token_amount = take_profit_price * to_token.decimals
+            required_token_amount = order.to_token_amount
 
-            # TODO: Implement create order on DEX
+            # Make swap transaction
+            dex_quote = await self.broker_service.get_quote_tokens(
+                from_token.address,
+                to_token.address,
+                required_token_amount,
+            )
+
+            (
+                await self.broker_service.make_transaction(
+                    dex_quote, str(self.wallet.pub_key)
+                )
+            )
+            dex_receive_amount = int(dex_quote["outAmount"])
+
             if order_sell_price < stop_loss_price:
                 logger.log(
                     "SELL",
-                    f"{stop_loss_price:.2f} Sell order for order ID {order.id} triggered by stop loss.",
+                    f"{stop_loss_price:.2f} Sell order for order ID "
+                    f"{order.id} triggered by stop loss.",
                 )
+
+                # Check wallet balance
+                base_token_balance = await self.wallet.get_balance(to_token)
+                if (
+                    not base_token_balance.token
+                    or required_token_amount > base_token_balance.amount
+                ):
+                    logger.warning(
+                        "Insufficient balance for selling. "
+                        f"Required: {required_token_amount}, "
+                        f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
+                    )
+                    return
+
+                # Send transaction
+                # TODO: Uncomment when all methods will tests
+                # await self.wallet.send_transaction(dex_transaction_instructions)
                 await self.order_sell.create(
-                    order.to_token_id,
-                    order.from_token_id,
-                    order.amount,
+                    from_token.id,
+                    to_token.id,
+                    required_token_amount,
+                    dex_receive_amount,
                     sell_price_with_fee,
                     order.id,
                 )
@@ -188,10 +236,40 @@ class TradeService:
                     log_message,
                 )
             elif order_sell_price >= take_profit_price:
+                dex_swap_value = float(dex_quote["swapUsdValue"])
+
+                if dex_receive_amount < receive_token_amount:
+                    logger.critical(
+                        "Received amount from DEX is less than expected. "
+                        f"Get: {dex_receive_amount} expect: {receive_token_amount}"
+                    )
+                    return
+
+                if dex_swap_value < take_profit_price:
+                    logger.critical("Get less than expected")
+                    return
+
+                # Check wallet balance
+                base_token_balance = await self.wallet.get_balance(to_token)
+                if (
+                    not base_token_balance.token
+                    or required_token_amount > base_token_balance.amount
+                ):
+                    logger.warning(
+                        "Insufficient balance for selling. "
+                        f"Required: {required_token_amount}, "
+                        f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
+                    )
+                    return
+
+                # Send transaction
+                # TODO: Uncomment when all methods will tests
+                # await self.wallet.send_transaction(dex_transaction_instructions)
                 await self.order_sell.create(
-                    order.to_token_id,
-                    order.from_token_id,
-                    order.amount,
+                    from_token.id,
+                    to_token.id,
+                    required_token_amount,
+                    dex_receive_amount,
                     sell_price_with_fee,
                     order.id,
                 )
@@ -200,7 +278,7 @@ class TradeService:
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
                     f"Take profit: {order_sell_price - order_buy_price:.2f}. "
-                    f"Price profit: {take_profit_price / order.amount:.2f}"
+                    f"Price profit: {take_profit_price / order_amount:.2f}"
                 )
                 logger.log(
                     "SELL",
@@ -216,7 +294,7 @@ class TradeService:
                     f"Buy price: {order_buy_price:.2f}, "
                     f"Sell price: {order_sell_price:.2f}, "
                     f"Take profit: {order_sell_price - order_buy_price:.2f}. "
-                    f"Price profit: {take_profit_price / order.amount:.2f}"
+                    f"Price profit: {take_profit_price / order_amount:.2f}"
                 )
                 logger.log(
                     "SELL",
@@ -225,37 +303,89 @@ class TradeService:
 
     async def check_buy_order(
         self,
+        from_token: Token,
+        to_token: Token,
         opened_orders: list[OrderBuy],
         buy_price_with_fee: float,
     ):
-        # TODO: Implement create order on DEX
-        # TODO: Make swap transaction -> Dex client
-        # TODO: Check wallet balance -> Wallet
-        # TODO: Send transaction -> Wallet
-        if len(opened_orders) < self.buy_max_orders_threshlod:
-            await self.order_buy.create(
-                self.base_token.id,
-                self.target_token.id,
-                self.buy_amount,
-                buy_price_with_fee,
-            )
-
+        if len(opened_orders) > self.buy_max_orders_threshlod:
             log_message = (
-                f"Buy order created for {self.buy_amount} "
-                f"({buy_price_with_fee * self.buy_amount:.2f}) "
-                f"{self.target_token.name} at price {buy_price_with_fee:.2f}."
+                "Cannot create buy order: reached maximum "
+                f"orders threshold ({self.buy_max_orders_threshlod})."
             )
             logger.log(
                 "BUY",
                 log_message,
             )
-            logger.log(
-                "NOTIF",
-                log_message,
+            return
+
+        receive_token_amount = int(to_token.decimals * self.buy_amount)
+        required_token_amount = int(
+            buy_price_with_fee * from_token.decimals * self.buy_amount
+        )
+
+        # Make swap transaction
+        dex_quote = await self.broker_service.get_quote_tokens(
+            from_token.address,
+            to_token.address,
+            required_token_amount,
+        )
+        dex_receive_amount = int(dex_quote["outAmount"])
+        dex_swap_value = float(dex_quote["swapUsdValue"])
+
+        if dex_receive_amount < receive_token_amount:
+            logger.critical(
+                "Received amount from DEX is less than expected. "
+                f"Get: {dex_receive_amount} expect: {receive_token_amount}"
             )
-        else:
-            log_message = f"Cannot create buy order: reached maximum orders threshold ({self.buy_max_orders_threshlod})."
-            logger.log(
-                "BUY",
-                log_message,
+            return
+
+        if dex_swap_value > (buy_price_with_fee * self.buy_amount):
+            logger.critical("Spend more than expected")
+            return
+
+        (
+            await self.broker_service.make_transaction(
+                dex_quote, str(self.wallet.pub_key)
             )
+        )
+
+        # Check wallet balance
+        base_token_balance = await self.wallet.get_balance(from_token)
+        if (
+            not base_token_balance.token
+            or required_token_amount > base_token_balance.token.amount
+        ):
+            logger.warning(
+                "Insufficient balance for buying. "
+                f"Required: {required_token_amount}, "
+                f"Available: {base_token_balance.token.amount if base_token_balance.token else 0}"
+            )
+            return
+
+        # Send transaction
+        # TODO: Uncomment when all methods will tests
+        # await self.wallet.send_transaction(dex_transaction_instructions)
+
+        await self.order_buy.create(
+            from_token.id,
+            to_token.id,
+            required_token_amount,
+            receive_token_amount,
+            buy_price_with_fee,
+        )
+
+        log_message = (
+            f"Buy order created for {self.buy_amount} "
+            f"({buy_price_with_fee * self.buy_amount:.2f}) "
+            f"{to_token.name} at price {buy_price_with_fee:.2f}. "
+            f"Token count: {required_token_amount}"
+        )
+        logger.log(
+            "BUY",
+            log_message,
+        )
+        logger.log(
+            "NOTIF",
+            log_message,
+        )
