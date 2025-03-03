@@ -1,8 +1,8 @@
 """init: first commit
 
-Revision ID: 213842691bfd
+Revision ID: ba0432159462
 Revises:
-Create Date: 2025-03-01 18:38:33.685624
+Create Date: 2025-03-03 11:28:40.847714
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "213842691bfd"
+revision: str = "ba0432159462"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -49,6 +49,10 @@ def upgrade() -> None:
         sa.Column("rsi_time_period", sa.Integer(), nullable=False),
         sa.Column("buy_amount", sa.Float(), nullable=False),
         sa.Column("buy_max_orders_threshold", sa.Integer(), nullable=False),
+        sa.Column(
+            "buy_max_orders_in_last_period", sa.Integer(), nullable=False
+        ),
+        sa.Column("buy_check_period_minutes", sa.Integer(), nullable=False),
         sa.Column("auto_buy_enabled", sa.Boolean(), nullable=False),
         sa.Column("auto_sell_enabled", sa.Boolean(), nullable=False),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
