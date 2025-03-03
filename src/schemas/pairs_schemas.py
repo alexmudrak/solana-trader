@@ -35,6 +35,8 @@ class PairsSettingsResponse(BaseModel):
     rsi_time_period: int
     buy_amount: float
     buy_max_orders_threshold: int
+    buy_max_orders_in_last_period: int
+    buy_check_period_minutes: int
     auto_buy_enabled: bool | None
     auto_sell_enabled: bool | None
 
@@ -49,6 +51,8 @@ class CreatePairsSettingsRequest(BaseModel):
 class UpdatePairSettingsRequest(BaseModel):
     buy_amount: float
     buy_max_orders_threshold: int
+    buy_max_orders_in_last_period: int
+    buy_check_period_minutes: int
     long_ema_time_period: int
     rsi_buy_threshold: int
     rsi_sell_threshold: int

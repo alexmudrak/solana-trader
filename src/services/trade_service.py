@@ -65,9 +65,12 @@ class TradeService:
         self.buy_max_orders_threshold = (
             self.trading_setting.buy_max_orders_threshold
         )  # default 2
-        # TODO: Move to pair settings
-        self.buy_max_orders_in_last_period = 1
-        self.buy_check_period_minutes = 60
+        self.buy_max_orders_in_last_period = (
+            self.trading_setting.buy_max_orders_in_last_period
+        )  # default 1
+        self.buy_check_period_minutes = (
+            self.trading_setting.buy_check_period_minutes
+        )  # default 60
 
     def get_prices_list_by_minutes(
         self, prices: list[Price]

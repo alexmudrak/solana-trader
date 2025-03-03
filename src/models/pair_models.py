@@ -90,6 +90,16 @@ class TradingSettings(BaseAppModel):
         nullable=False,
         default=2,
     )
+    buy_max_orders_in_last_period: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+    )
+    buy_check_period_minutes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=60,
+    )
     auto_buy_enabled: Mapped[bool] = mapped_column(
         Boolean,
         default=False,

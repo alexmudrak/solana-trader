@@ -20,7 +20,7 @@ async function loadTokens() {
     data.forEach((pair) => {
         const option = document.createElement('option')
         option.value = pair.id
-        option.textContent = `${pair.from_token.name} -> ${pair.to_token.name}`
+        option.textContent = `${pair.from_token.name} / ${pair.to_token.name}`
         tokenSelect.appendChild(option)
     })
 }
@@ -148,7 +148,7 @@ async function renderChart() {
                 interaction: {
                     intersect: false,
                     mode: 'nearest',
-                    axis: 'xy'
+                    axis: 'xy',
                 },
                 scales: {
                     x: {
@@ -348,6 +348,10 @@ async function renderPairSettings() {
         document.getElementById('auto-buy-value').value = settings.auto_buy_enabled
         document.getElementById('auto-sell-value').value =
             settings.auto_sell_enabled
+        document.getElementById('max-orders-period').value =
+            settings.buy_check_period_minutes
+        document.getElementById('max-orders-period-amount').value =
+            settings.buy_max_orders_in_last_period
         document.getElementById('max-orders').value =
             settings.buy_max_orders_threshold
         const form = document.getElementById('settings-form')

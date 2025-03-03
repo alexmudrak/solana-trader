@@ -46,6 +46,10 @@ class PairsSettingsRepository:
         obj.rsi_time_period = settings_data.rsi_time_period
         obj.buy_amount = settings_data.buy_amount
         obj.buy_max_orders_threshold = settings_data.buy_max_orders_threshold
+        obj.buy_max_orders_in_last_period = (
+            settings_data.buy_max_orders_in_last_period
+        )
+        obj.buy_check_period_minutes = settings_data.buy_check_period_minutes
         obj.auto_buy_enabled = settings_data.auto_buy_enabled
         obj.auto_sell_enabled = settings_data.auto_sell_enabled
         await self.session.flush()
