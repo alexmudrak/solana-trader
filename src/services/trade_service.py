@@ -71,6 +71,12 @@ class TradeService:
         self.buy_check_period_minutes = (
             self.trading_setting.buy_check_period_minutes
         )  # default 60
+        self.auto_buy_enabled = (
+            self.trading_setting.auto_buy_enabled
+        )  # Default False
+        self.auto_sell_enabled = (
+            self.trading_setting.auto_sell_enabled
+        )  # Default False
 
     def get_prices_list_by_minutes(
         self, prices: list[Price]
@@ -147,19 +153,21 @@ class TradeService:
                 )
 
         if ema_short > ema_long and rsi_value < self.rsi_buy_threshold:
-            await self.check_buy_order(
-                self.base_token,
-                self.target_token,
-                opened_orders,
-                buy_price_with_fee,
-            )
+            if self.auto_buy_enabled:
+                await self.check_buy_order(
+                    self.base_token,
+                    self.target_token,
+                    opened_orders,
+                    buy_price_with_fee,
+                )
         elif ema_short < ema_long and rsi_value > self.rsi_sell_threshold:
-            await self.check_sell_orders(
-                self.target_token,
-                self.base_token,
-                opened_orders,
-                sell_price_with_fee,
-            )
+            if self.auto_sell_enabled:
+                await self.check_sell_orders(
+                    self.target_token,
+                    self.base_token,
+                    opened_orders,
+                    sell_price_with_fee,
+                )
         else:
             logger.log("ANALYZER", "🛑 No trading action taken.")
 
@@ -329,10 +337,11 @@ class TradeService:
         buy_price_with_fee: float,
     ):
         total_open_orders = len(opened_orders)
-        if total_open_orders > self.buy_max_orders_threshold:
+        if total_open_orders >= self.buy_max_orders_threshold:
             log_message = (
                 "Cannot create buy order: reached maximum "
-                f"orders threshold ({self.buy_max_orders_threshold})."
+                f"orders threshold ({self.buy_max_orders_threshold}). "
+                f"Total orders: {total_open_orders}"
             )
             logger.log(
                 "BUY",
