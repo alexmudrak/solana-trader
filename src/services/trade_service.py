@@ -186,20 +186,6 @@ class TradeService:
             receive_token_amount = take_profit_price * to_token.decimals
             required_token_amount = order.to_token_amount
 
-            # Make swap transaction
-            dex_quote = await self.broker_service.get_quote_tokens(
-                from_token.address,
-                to_token.address,
-                required_token_amount,
-            )
-
-            (
-                await self.broker_service.make_transaction(
-                    dex_quote, str(self.wallet.pub_key)
-                )
-            )
-            dex_receive_amount = int(dex_quote["outAmount"])
-
             if order_sell_price < stop_loss_price:
                 logger.log(
                     "SELL",
@@ -219,6 +205,20 @@ class TradeService:
                         f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
                     )
                     return
+
+                # Make swap transaction
+                dex_quote = await self.broker_service.get_quote_tokens(
+                    from_token.address,
+                    to_token.address,
+                    required_token_amount,
+                )
+
+                (
+                    await self.broker_service.make_transaction(
+                        dex_quote, str(self.wallet.pub_key)
+                    )
+                )
+                dex_receive_amount = int(dex_quote["outAmount"])
 
                 # Send transaction
                 # TODO: Uncomment when all methods will tests
@@ -243,6 +243,19 @@ class TradeService:
                     log_message,
                 )
             elif order_sell_price >= take_profit_price:
+                # Make swap transaction
+                dex_quote = await self.broker_service.get_quote_tokens(
+                    from_token.address,
+                    to_token.address,
+                    required_token_amount,
+                )
+
+                (
+                    await self.broker_service.make_transaction(
+                        dex_quote, str(self.wallet.pub_key)
+                    )
+                )
+                dex_receive_amount = int(dex_quote["outAmount"])
                 dex_swap_value = float(dex_quote["swapUsdValue"])
 
                 if dex_receive_amount < receive_token_amount:

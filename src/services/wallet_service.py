@@ -42,7 +42,7 @@ class WalletService:
             )
 
             token_balance = None
-            for try_num in range(1, 10):
+            for try_num in range(1, 3):
                 logger.warning(f"Try to get balance - {try_num}...")
                 try:
                     await asyncio.sleep(2)
