@@ -10,7 +10,10 @@ from solana.rpc.types import TokenAccountOpts, TxOpts
 from solders import message
 from solders.keypair import Keypair  # type: ignore
 from solders.pubkey import Pubkey  # type: ignore
-from solders.rpc.responses import RpcBlockhash  # type: ignore
+from solders.rpc.responses import (  # type: ignore
+    GetTransactionResp,
+    RpcBlockhash,
+)
 from solders.signature import Signature  # type: ignore
 from solders.transaction import VersionedTransaction  # type: ignore
 
@@ -116,6 +119,30 @@ class WalletService:
 
             return blockhash
 
+    async def check_transaction(
+        self, signature: Signature
+    ) -> GetTransactionResp | None:
+        # TODO: need to refactor
+        async with AsyncClient(self.rpc_url) as client:
+            result = None
+            for num in range(10):
+                await asyncio.sleep(3)
+                logger.info(f"Check transaction num: {num}")
+                try:
+                    result = await client.get_transaction(
+                        signature,
+                        max_supported_transaction_version=0,
+                    )
+                    if result.value and result.value.transaction.meta:
+                        error = result.value.transaction.meta.err
+                        if error:
+                            raise ValueError(error)
+                    if result.value:
+                        return result
+                except SolanaRpcException as error:
+                    pass
+            return result
+
     async def send_transaction(
         self, transaction_insctructions: dict[str, Any]
     ) -> Signature:
@@ -146,7 +173,19 @@ class WalletService:
                 bytes(signed_transaction),
                 options,
             )
+
             result_tx_id = result.value
-            logger.info(f"Transaction sent. TxID: {result_tx_id}")
+            tx_url = f"https://explorer.solana.com/tx/{result_tx_id}"
+            logger.info(f"Transaction sent: {tx_url}")
+
+            # Waiting for the transaction
+            transaction_status = await self.check_transaction(result_tx_id)
+            if not transaction_status or not transaction_status.value:
+                logger.critical("")
+                logger.log("NOTIF", "")
+                raise ValueError("")
+
+            logger.info(f"Transaction confirmed: {tx_url}")
+            logger.log("NOTIF", f"Transaction confirmed: {tx_url}")
 
             return result_tx_id

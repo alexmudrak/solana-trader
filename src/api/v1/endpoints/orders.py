@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from brokers.jupiter_market import JupiterMarket
 from core.constants import MARKET_FEE
 from core.database import get_session
 from repositories.orders_buy_repository import OrderBuyRepository
@@ -18,6 +20,7 @@ from schemas.tokens_schemas import (
     BuyTokensRequest,
     SellTokensRequest,
 )
+from services.wallet_service import WalletService
 
 router = APIRouter()
 
@@ -31,6 +34,10 @@ async def buy_tokens(
     pairs_repository = PairsRepository(db_session)
     price_repository = PricesRepository(db_session)
 
+    # TODO: Getting broker service from pair settings
+    broker_service = JupiterMarket()
+    wallet = WalletService()
+
     pair_id = request.pair_id
     pair = await pairs_repository.get_pair_by_id(pair_id)
     if not pair:
@@ -40,14 +47,59 @@ async def buy_tokens(
         )
 
     last_price = await price_repository.get_latest(pair.to_token_id)
-    buy_price_with_fee = last_price / MARKET_FEE
-    # TODO: Calculate from swap transaction
-    from_token_amount = int(
-        buy_price_with_fee * pair.from_token.decimals * request.amount
-    )
-    to_token_amount = int(request.amount * pair.to_token.decimals)
+    buy_price_with_fee = last_price * MARKET_FEE
 
-    # TODO: Add swap transaction
+    from_token = pair.from_token
+    to_token = pair.to_token
+    required_token_amount = int(
+        buy_price_with_fee * from_token.decimals * request.amount
+    )
+    receive_token_amount = int(pair.to_token.decimals * request.amount)
+
+    # Make swap transaction
+    dex_quote = await broker_service.get_quote_tokens(
+        from_token.address,
+        to_token.address,
+        required_token_amount,
+    )
+    dex_receive_amount = int(dex_quote["outAmount"])
+    dex_send_amount = int(dex_quote["inAmount"])
+    dex_swap_value = float(dex_quote["swapUsdValue"])
+
+    if dex_receive_amount < receive_token_amount:
+        logger.critical(
+            "Received amount from DEX is less than expected. "
+            f"Get: {dex_receive_amount} expect: {receive_token_amount}"
+        )
+        return
+
+    if dex_swap_value > (buy_price_with_fee * request.amount):
+        logger.critical("Spend more than expected")
+        return
+
+    dex_transaction_instructions = await broker_service.make_transaction(
+        dex_quote, str(wallet.pub_key)
+    )
+
+    # Check wallet balance
+    base_token_balance = await wallet.get_balance(from_token)
+    if (
+        not base_token_balance.token
+        or required_token_amount > base_token_balance.token.amount
+    ):
+        logger.warning(
+            "Insufficient balance for buying. "
+            f"Required: {required_token_amount}, "
+            f"Available: {base_token_balance.token.amount if base_token_balance.token else 0}"
+        )
+        return
+
+    # Send transaction
+    await wallet.send_transaction(dex_transaction_instructions)
+
+    from_token_amount = dex_send_amount
+    to_token_amount = dex_receive_amount
+
     result = await order_buy_repository.create(
         from_token_id=pair.from_token_id,
         to_token_id=pair.to_token_id,
@@ -77,6 +129,9 @@ async def sell_tokens(
     pairs_repository = PairsRepository(db_session)
     price_repository = PricesRepository(db_session)
 
+    broker_service = JupiterMarket()
+    wallet = WalletService()
+
     pair_id = request.pair_id
     pair = await pairs_repository.get_pair_by_id(pair_id)
     if not pair:
@@ -84,6 +139,7 @@ async def sell_tokens(
             status_code=404,
             detail=f"Trade pair id {pair_id} not found",
         )
+
     order_id = request.order_id
     order = await order_buy_repository.get_order_by_id(order_id)
     if not order:
@@ -91,11 +147,56 @@ async def sell_tokens(
             status_code=404,
             detail=f"Order id {order_id} not found",
         )
+
     last_price = await price_repository.get_latest(pair.to_token_id)
     sell_price_with_fee = last_price / MARKET_FEE
-    from_token_amount = int(order.to_token_amount)
-    # TODO: Calculate from swap transaction
-    to_token_amount = int(order.from_token_amount)
+
+    from_token = pair.to_token
+    to_token = pair.from_token
+    required_token_amount = int(order.to_token_amount)
+    receive_token_amount = int(
+        sell_price_with_fee * request.amount * to_token.decimals
+    )
+
+    # Make swap transaction
+    dex_quote = await broker_service.get_quote_tokens(
+        from_token.address,
+        to_token.address,
+        required_token_amount,
+    )
+
+    dex_transaction_instructions = await broker_service.make_transaction(
+        dex_quote, str(wallet.pub_key)
+    )
+
+    dex_receive_amount = int(dex_quote["outAmount"])
+    dex_send_amount = int(dex_quote["inAmount"])
+
+    if dex_receive_amount < receive_token_amount:
+        logger.critical(
+            "Received amount from DEX is less than expected. "
+            f"Get: {dex_receive_amount} expect: {receive_token_amount}"
+        )
+        return
+
+    # Check wallet balance
+    base_token_balance = await wallet.get_balance(to_token)
+    if (
+        not base_token_balance.token
+        or required_token_amount > base_token_balance.amount
+    ):
+        logger.warning(
+            "Insufficient balance for selling. "
+            f"Required: {required_token_amount}, "
+            f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
+        )
+        return
+
+    # Send transaction
+    await wallet.send_transaction(dex_transaction_instructions)
+
+    from_token_amount = int(dex_send_amount)
+    to_token_amount = int(dex_receive_amount)
 
     # TODO: Add swap transaction
     result = await order_sell_repository.create(

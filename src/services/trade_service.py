@@ -200,6 +200,21 @@ class TradeService:
                     f"{stop_loss_price:.2f} Sell order for order ID "
                     f"{order.id} triggered by stop loss.",
                 )
+                # Make swap transaction
+                dex_quote = await self.broker_service.get_quote_tokens(
+                    from_token.address,
+                    to_token.address,
+                    required_token_amount,
+                )
+
+                dex_transaction_instructions = (
+                    await self.broker_service.make_transaction(
+                        dex_quote, str(self.wallet.pub_key)
+                    )
+                )
+
+                dex_receive_amount = int(dex_quote["outAmount"])
+                dex_send_amount = int(dex_quote["inAmount"])
 
                 # Check wallet balance
                 base_token_balance = await self.wallet.get_balance(to_token)
@@ -214,31 +229,23 @@ class TradeService:
                     )
                     return
 
-                # Make swap transaction
-                dex_quote = await self.broker_service.get_quote_tokens(
-                    from_token.address,
-                    to_token.address,
-                    required_token_amount,
-                )
-
-                (
-                    await self.broker_service.make_transaction(
-                        dex_quote, str(self.wallet.pub_key)
-                    )
-                )
-                dex_receive_amount = int(dex_quote["outAmount"])
-
                 # Send transaction
-                # TODO: Uncomment when all methods will tests
-                # await self.wallet.send_transaction(dex_transaction_instructions)
-                await self.order_sell.create(
-                    from_token.id,
-                    to_token.id,
-                    required_token_amount,
-                    dex_receive_amount,
-                    sell_price_with_fee,
-                    order.id,
+                await self.wallet.send_transaction(
+                    dex_transaction_instructions
                 )
+
+                from_token_amount = int(dex_send_amount)
+                to_token_amount = int(dex_receive_amount)
+
+                await self.order_sell.create(
+                    from_token_id=from_token.id,
+                    to_token_id=to_token.id,
+                    from_token_amount=from_token_amount,
+                    to_token_amount=to_token_amount,
+                    price=sell_price_with_fee,
+                    buy_order_id=order.id,
+                )
+
                 log_message = (
                     f"Sell order created due to stop loss for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
@@ -258,12 +265,14 @@ class TradeService:
                     required_token_amount,
                 )
 
-                (
+                dex_transaction_instructions = (
                     await self.broker_service.make_transaction(
                         dex_quote, str(self.wallet.pub_key)
                     )
                 )
+
                 dex_receive_amount = int(dex_quote["outAmount"])
+                dex_send_amount = int(dex_quote["inAmount"])
                 dex_swap_value = float(dex_quote["swapUsdValue"])
 
                 if dex_receive_amount < receive_token_amount:
@@ -291,15 +300,20 @@ class TradeService:
                     return
 
                 # Send transaction
-                # TODO: Uncomment when all methods will tests
-                # await self.wallet.send_transaction(dex_transaction_instructions)
+                await self.wallet.send_transaction(
+                    dex_transaction_instructions
+                )
+
+                from_token_amount = int(dex_send_amount)
+                to_token_amount = int(dex_receive_amount)
+
                 await self.order_sell.create(
-                    from_token.id,
-                    to_token.id,
-                    required_token_amount,
-                    dex_receive_amount,
-                    sell_price_with_fee,
-                    order.id,
+                    from_token_id=from_token.id,
+                    to_token_id=to_token.id,
+                    from_token_amount=from_token_amount,
+                    to_token_amount=to_token_amount,
+                    price=sell_price_with_fee,
+                    buy_order_id=order.id,
                 )
                 log_message = (
                     f"Sell order created for order ID {order.id}. "
@@ -381,7 +395,9 @@ class TradeService:
             to_token.address,
             required_token_amount,
         )
+
         dex_receive_amount = int(dex_quote["outAmount"])
+        dex_send_amount = int(dex_quote["inAmount"])
         dex_swap_value = float(dex_quote["swapUsdValue"])
 
         if dex_receive_amount < receive_token_amount:
@@ -395,7 +411,7 @@ class TradeService:
             logger.critical("Spend more than expected")
             return
 
-        (
+        dex_transaction_instructions = (
             await self.broker_service.make_transaction(
                 dex_quote, str(self.wallet.pub_key)
             )
@@ -415,15 +431,17 @@ class TradeService:
             return
 
         # Send transaction
-        # TODO: Uncomment when all methods will tests
-        # await self.wallet.send_transaction(dex_transaction_instructions)
+        await self.wallet.send_transaction(dex_transaction_instructions)
+
+        from_token_amount = dex_send_amount
+        to_token_amount = dex_receive_amount
 
         await self.order_buy.create(
-            from_token.id,
-            to_token.id,
-            required_token_amount,
-            receive_token_amount,
-            buy_price_with_fee,
+            from_token_id=from_token.id,
+            to_token_id=to_token.id,
+            from_token_amount=from_token_amount,
+            to_token_amount=to_token_amount,
+            price=buy_price_with_fee,
         )
 
         log_message = (

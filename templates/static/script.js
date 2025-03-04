@@ -282,7 +282,7 @@ async function renderTable(currentPrice, orders_data) {
             <td class="border-b px-4 py-2">${new Date(row.created).toLocaleString()}</td>
             <td class="border-b px-4 py-2">${row.token}</td>
             <td class="border-b px-4 py-2">
-                    <span>${row.amount}</span>
+                    <span>${row.amount.toFixed(2)}</span>
             </td>
 
             <td class="border-b px-4 py-2">
