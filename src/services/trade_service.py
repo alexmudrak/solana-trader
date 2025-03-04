@@ -3,7 +3,6 @@ from itertools import groupby
 
 from loguru import logger
 
-from brokers.abstract_market import AbstractMarket
 from core.constants import MARKET_FEE
 from models.orders_models import OrderBuy
 from models.pair_models import TradingPairSettings
@@ -13,23 +12,21 @@ from repositories.orders_buy_repository import OrderBuyRepository
 from repositories.orders_sell_repository import OrderSellRepository
 from repositories.prices_repository import PricesRepository
 from schemas.trade_service_schemas import PriceByMinute
-from services.wallet_service import WalletService
+from services.transaction_service import TransactionService
 from utils.trade_indicators import TradeIndicators
 
 
 class TradeService:
     def __init__(
         self,
-        wallet_service: WalletService,
-        broker_service: AbstractMarket,
+        transaction_service: TransactionService,
         trade_indicators: TradeIndicators,
         pair_settings: TradingPairSettings,
         prices_repository: PricesRepository,
         order_buy_repository: OrderBuyRepository,
         order_sell_repository: OrderSellRepository,
     ):
-        self.wallet = wallet_service
-        self.broker_service = broker_service
+        self.transaction_service = transaction_service
         self.trade_indicators = trade_indicators
         self.prices = prices_repository
         self.order_buy = order_buy_repository
@@ -38,7 +35,6 @@ class TradeService:
         self.target_token = pair_settings.to_token
         # TODO: Need to remove in the production and
         #       get fee from FetcherService
-        self.market_fee = MARKET_FEE
         self.trading_setting = pair_settings.trading_setting
         self.take_profit_percentage = (
             self.trading_setting.take_profit_percentage
@@ -101,19 +97,6 @@ class TradeService:
 
     async def analyzer(self):
         last_price = await self.prices.get_latest(self.target_token.id)
-        # TODO: Implement getting fee from DEX market
-        buy_price_with_fee = last_price * self.market_fee
-        sell_price_with_fee = last_price / self.market_fee
-
-        logger.opt(ansi=True).log(
-            "ANALYZER",
-            f"<green>BUY</green> price with FEE: <white>{buy_price_with_fee:.2f}</white>",
-        )
-        logger.opt(colors=True).log(
-            "ANALYZER",
-            f"<red>SELL</red> price with FEE: <white>{sell_price_with_fee:.2f}</white>",
-        )
-
         time_threshold = datetime.now(UTC) - timedelta(
             minutes=20,
         )
@@ -158,7 +141,7 @@ class TradeService:
                     self.base_token,
                     self.target_token,
                     opened_orders,
-                    buy_price_with_fee,
+                    last_price,
                 )
         elif ema_short < ema_long and rsi_value > self.rsi_sell_threshold:
             if self.auto_sell_enabled:
@@ -166,7 +149,7 @@ class TradeService:
                     self.target_token,
                     self.base_token,
                     opened_orders,
-                    sell_price_with_fee,
+                    last_price,
                 )
         else:
             logger.log("ANALYZER", "🛑 No trading action taken.")
@@ -176,13 +159,14 @@ class TradeService:
         from_token: Token,
         to_token: Token,
         opened_orders: list[OrderBuy],
-        sell_price_with_fee: float,
+        last_price,
     ):
         logger.log(
             "SELL", f"Found {len(opened_orders)} open orders for selling."
         )
 
         for order in opened_orders:
+            sell_price_with_fee = last_price / MARKET_FEE
             order_amount = order.to_token_amount / order.to_token.decimals
             order_buy_price = order.price * order_amount
             order_sell_price = sell_price_with_fee * order_amount
@@ -191,7 +175,6 @@ class TradeService:
             take_profit_price = order_buy_price * (
                 1 + self.take_profit_percentage
             )
-            receive_token_amount = take_profit_price * to_token.decimals
             required_token_amount = order.to_token_amount
 
             if order_sell_price < stop_loss_price:
@@ -200,49 +183,23 @@ class TradeService:
                     f"{stop_loss_price:.2f} Sell order for order ID "
                     f"{order.id} triggered by stop loss.",
                 )
-                # Make swap transaction
-                dex_quote = await self.broker_service.get_quote_tokens(
-                    from_token.address,
-                    to_token.address,
-                    required_token_amount,
+                transaction_result = await self.transaction_service.sell(
+                    from_token=from_token,
+                    to_token=to_token,
+                    sell_token_amount=required_token_amount,
+                    last_market_price=last_price,
                 )
-
-                dex_transaction_instructions = (
-                    await self.broker_service.make_transaction(
-                        dex_quote, str(self.wallet.pub_key)
-                    )
-                )
-
-                dex_receive_amount = int(dex_quote["outAmount"])
-                dex_send_amount = int(dex_quote["inAmount"])
-
-                # Check wallet balance
-                base_token_balance = await self.wallet.get_balance(to_token)
-                if (
-                    not base_token_balance.token
-                    or required_token_amount > base_token_balance.amount
-                ):
-                    logger.warning(
-                        "Insufficient balance for selling. "
-                        f"Required: {required_token_amount}, "
-                        f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
-                    )
+                if not transaction_result:
+                    message = f"Transaction failed: unable to complete the sell order id: {order.id}"
+                    logger.critical(message)
                     return
-
-                # Send transaction
-                await self.wallet.send_transaction(
-                    dex_transaction_instructions
-                )
-
-                from_token_amount = int(dex_send_amount)
-                to_token_amount = int(dex_receive_amount)
 
                 await self.order_sell.create(
                     from_token_id=from_token.id,
                     to_token_id=to_token.id,
-                    from_token_amount=from_token_amount,
-                    to_token_amount=to_token_amount,
-                    price=sell_price_with_fee,
+                    from_token_amount=transaction_result.send_amount,
+                    to_token_amount=transaction_result.receive_amount,
+                    price=transaction_result.price,
                     buy_order_id=order.id,
                 )
 
@@ -258,63 +215,27 @@ class TradeService:
                     log_message,
                 )
             elif order_sell_price >= take_profit_price:
-                # Make swap transaction
-                dex_quote = await self.broker_service.get_quote_tokens(
-                    from_token.address,
-                    to_token.address,
-                    required_token_amount,
+                transaction_result = await self.transaction_service.sell(
+                    from_token=from_token,
+                    to_token=to_token,
+                    sell_token_amount=required_token_amount,
+                    last_market_price=last_price,
+                    take_profit_price=take_profit_price,
                 )
-
-                dex_transaction_instructions = (
-                    await self.broker_service.make_transaction(
-                        dex_quote, str(self.wallet.pub_key)
-                    )
-                )
-
-                dex_receive_amount = int(dex_quote["outAmount"])
-                dex_send_amount = int(dex_quote["inAmount"])
-                dex_swap_value = float(dex_quote["swapUsdValue"])
-
-                if dex_receive_amount < receive_token_amount:
-                    logger.critical(
-                        "Received amount from DEX is less than expected. "
-                        f"Get: {dex_receive_amount} expect: {receive_token_amount}"
-                    )
+                if not transaction_result:
+                    message = f"Transaction failed: unable to complete the sell order id: {order.id}"
+                    logger.critical(message)
                     return
-
-                if dex_swap_value < take_profit_price:
-                    logger.critical("Get less than expected")
-                    return
-
-                # Check wallet balance
-                base_token_balance = await self.wallet.get_balance(to_token)
-                if (
-                    not base_token_balance.token
-                    or required_token_amount > base_token_balance.amount
-                ):
-                    logger.warning(
-                        "Insufficient balance for selling. "
-                        f"Required: {required_token_amount}, "
-                        f"Available: {base_token_balance.amount if base_token_balance.token else 0}"
-                    )
-                    return
-
-                # Send transaction
-                await self.wallet.send_transaction(
-                    dex_transaction_instructions
-                )
-
-                from_token_amount = int(dex_send_amount)
-                to_token_amount = int(dex_receive_amount)
 
                 await self.order_sell.create(
                     from_token_id=from_token.id,
                     to_token_id=to_token.id,
-                    from_token_amount=from_token_amount,
-                    to_token_amount=to_token_amount,
-                    price=sell_price_with_fee,
+                    from_token_amount=transaction_result.send_amount,
+                    to_token_amount=transaction_result.receive_amount,
+                    price=transaction_result.price,
                     buy_order_id=order.id,
                 )
+
                 log_message = (
                     f"Sell order created for order ID {order.id}. "
                     f"Buy price: {order_buy_price:.2f}, "
@@ -348,7 +269,7 @@ class TradeService:
         from_token: Token,
         to_token: Token,
         opened_orders: list[OrderBuy],
-        buy_price_with_fee: float,
+        last_price,
     ):
         total_open_orders = len(opened_orders)
         if total_open_orders >= self.buy_max_orders_threshold:
@@ -384,71 +305,31 @@ class TradeService:
             )
             return
 
-        receive_token_amount = int(to_token.decimals * self.buy_amount)
-        required_token_amount = int(
-            buy_price_with_fee * from_token.decimals * self.buy_amount
+        transaction_result = await self.transaction_service.buy(
+            from_token=from_token,
+            to_token=to_token,
+            buy_amount=self.buy_amount,
+            last_market_price=last_price,
         )
 
-        # Make swap transaction
-        dex_quote = await self.broker_service.get_quote_tokens(
-            from_token.address,
-            to_token.address,
-            required_token_amount,
-        )
-
-        dex_receive_amount = int(dex_quote["outAmount"])
-        dex_send_amount = int(dex_quote["inAmount"])
-        dex_swap_value = float(dex_quote["swapUsdValue"])
-
-        if dex_receive_amount < receive_token_amount:
-            logger.critical(
-                "Received amount from DEX is less than expected. "
-                f"Get: {dex_receive_amount} expect: {receive_token_amount}"
-            )
+        if not transaction_result:
+            message = "Transaction failed: unable to complete the buy order."
+            logger.critical(message)
             return
-
-        if dex_swap_value > (buy_price_with_fee * self.buy_amount):
-            logger.critical("Spend more than expected")
-            return
-
-        dex_transaction_instructions = (
-            await self.broker_service.make_transaction(
-                dex_quote, str(self.wallet.pub_key)
-            )
-        )
-
-        # Check wallet balance
-        base_token_balance = await self.wallet.get_balance(from_token)
-        if (
-            not base_token_balance.token
-            or required_token_amount > base_token_balance.token.amount
-        ):
-            logger.warning(
-                "Insufficient balance for buying. "
-                f"Required: {required_token_amount}, "
-                f"Available: {base_token_balance.token.amount if base_token_balance.token else 0}"
-            )
-            return
-
-        # Send transaction
-        await self.wallet.send_transaction(dex_transaction_instructions)
-
-        from_token_amount = dex_send_amount
-        to_token_amount = dex_receive_amount
 
         await self.order_buy.create(
             from_token_id=from_token.id,
             to_token_id=to_token.id,
-            from_token_amount=from_token_amount,
-            to_token_amount=to_token_amount,
-            price=buy_price_with_fee,
+            from_token_amount=transaction_result.send_amount,
+            to_token_amount=transaction_result.receive_amount,
+            price=transaction_result.price,
         )
 
         log_message = (
             f"Buy order created for {self.buy_amount} "
-            f"({buy_price_with_fee * self.buy_amount:.2f}) "
-            f"{to_token.name} at price {buy_price_with_fee:.2f}. "
-            f"Token count: {required_token_amount}"
+            f"({transaction_result.price * self.buy_amount:.2f}) "
+            f"{to_token.name} at price {transaction_result.price:.2f}. "
+            f"Token count: {transaction_result.receive_amount}"
         )
         logger.log(
             "BUY",

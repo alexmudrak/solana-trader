@@ -125,8 +125,8 @@ class WalletService:
         # TODO: need to refactor
         async with AsyncClient(self.rpc_url) as client:
             result = None
-            for num in range(10):
-                await asyncio.sleep(3)
+            for num in range(20):
+                await asyncio.sleep(5)
                 logger.info(f"Check transaction num: {num}")
                 try:
                     result = await client.get_transaction(
@@ -181,9 +181,10 @@ class WalletService:
             # Waiting for the transaction
             transaction_status = await self.check_transaction(result_tx_id)
             if not transaction_status or not transaction_status.value:
-                logger.critical("")
-                logger.log("NOTIF", "")
-                raise ValueError("")
+                error_msg = f"Transaction failed or could not be confirmed: {result_tx_id}"
+                logger.critical(error_msg)
+                logger.log("NOTIF", error_msg)
+                raise ValueError(error_msg)
 
             logger.info(f"Transaction confirmed: {tx_url}")
             logger.log("NOTIF", f"Transaction confirmed: {tx_url}")
