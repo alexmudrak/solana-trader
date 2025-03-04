@@ -19,17 +19,29 @@
         fromTokenSelect.innerHTML = '<option value=""></option>';
         toTokenSelect.innerHTML = '<option value=""></option>';
 
+        let usdcToken = null
+
         tokens.forEach(token => {
             const optionFrom = document.createElement('option');
             optionFrom.value = token.id;
             optionFrom.textContent = token.name;
             fromTokenSelect.appendChild(optionFrom);
 
-            const optionTo = document.createElement('option');
-            optionTo.value = token.id;
-            optionTo.textContent = token.name;
-            toTokenSelect.appendChild(optionTo);
+            if (token.name === 'USDC') {
+                usdcToken = token;
+            } else {
+                const optionTo = document.createElement('option');
+                optionTo.value = token.id;
+                optionTo.textContent = token.name;
+                toTokenSelect.appendChild(optionTo);
+            }
         });
+
+        if (usdcToken) {
+            fromTokenSelect.value = usdcToken.id;
+            fromTokenSelect.disabled = true;
+            document.getElementById('from-token-hidden').value = usdcToken.id
+        }
     }
 
     function updateToTokenOptions() {
@@ -59,13 +71,15 @@
           method="post"
           hx-post="/api/v1/pairs/"
           hx-ext='json-enc'
-          hx-include="#from-token, #to-token"
+          hx-include="#from-token-hidden, #to-token"
           hx-target="#message">
         <label for="from-token" class="block text-lg font-medium text-gray-700">From Token:</label>
         <select id="from-token"
                 name="from_token_id"
                 class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                 required></select>
+        <input type="hidden" id="from-token-hidden" name="from_token_id" value="">
+
         <label for="to-token" class="block text-lg font-medium text-gray-700 mt-4">To Token:</label>
         <select id="to-token"
                 name="to_token_id"
@@ -78,5 +92,4 @@
             </button>
         </div>
     </form>
-    <div id="message" class="mt-4 text-center"></div>
 {% endblock %}
