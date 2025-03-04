@@ -10,15 +10,23 @@ templates = Jinja2Templates(directory="templates")
 async def read_root(request: Request):
     return templates.TemplateResponse(
         "chart.html",
-        {"request": request},
+        {"request": request, "active_tab": "chart"},
     )
 
 
 @router.get(
-    "/create-trader", response_class=HTMLResponse, include_in_schema=False
+    "/create-pair", response_class=HTMLResponse, include_in_schema=False
 )
-async def read_create_trader(request: Request):
+async def read_create_pair(request: Request):
     return templates.TemplateResponse(
-        "create_trader.html",
-        {"request": request},
+        "create_pair.html",
+        {"request": request, "active_tab": "create-pair"},
+    )
+
+
+@router.get("/add-token", response_class=HTMLResponse, include_in_schema=False)
+async def read_add_token(request: Request):
+    return templates.TemplateResponse(
+        "add_token.html",
+        {"request": request, "active_tab": "add-token"},
     )

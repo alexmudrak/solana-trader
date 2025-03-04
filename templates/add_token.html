@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+{% endblock %}
+{% block content %}
+    <h2 class="text-2xl font-bold mb-4">Add new token</h2>
+    <form id="create-trading-pair-form"
+          method="post"
+          hx-post="/api/v1/tokens/"
+          hx-ext="json-enc"
+          hx-include="#from-token, #to-token"
+          hx-target="#message">
+        <label for="token-name" class="block text-lg font-medium text-gray-700">Token Name:</label>
+        <input type="text"
+               id="token-name"
+               name="name"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+               required />
+        <label for="token-address"
+               class="block text-lg font-medium text-gray-700 mt-4">Token Address:</label>
+        <input type="text"
+               id="token-address"
+               name="address"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+               required />
+        <label for="token-decimals"
+               class="block text-lg font-medium text-gray-700 mt-4">Decimals:</label>
+        <input type="number"
+               id="token-decimals"
+               name="decimals"
+               min="0"
+               class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+               required />
+        <div class="w-full flex justify-center mt-4">
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 transition">
+                Create token
+            </button>
+        </div>
+    </form>
+    <div id="message" class="mt-4 text-center"></div>
+{% endblock %}
