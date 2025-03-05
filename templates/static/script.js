@@ -192,10 +192,6 @@ async function renderChart() {
         })
     }
 
-    document.getElementById('priceChart').style.display = 'block'
-    document.getElementById('price-container').style.display = 'block'
-    document.getElementById('buttons-container').style.display = 'flex'
-
     await renderTable(currentPrice, orders_data)
 }
 function updatePriceDisplay(currentPrice) {
@@ -227,12 +223,12 @@ function updateChart() {
     if (selectedToken === 'create-new-trader') {
         window.location.href = '/create-trader'
     } else if (selectedToken) {
+        console.log(document)
+        document.getElementById('chart-content').style.display = 'block'
         renderChart()
         renderPairSettings()
     } else {
-        document.getElementById('priceChart').style.display = 'none'
-        document.getElementById('price-container').style.display = 'none'
-        document.getElementById('buttons-container').style.display = 'none'
+        document.getElementById('chart-content').style.display = 'none'
     }
 }
 
