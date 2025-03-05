@@ -35,6 +35,8 @@ class OrderBuyRepository:
     async def get_orders_for_token(
         self,
         token_id: int,
+        limit: int = 10,
+        offset: int = 0,
     ) -> list[OrderBuy]:
         try:
             stmt = (
@@ -42,6 +44,8 @@ class OrderBuyRepository:
                 .options(selectinload(OrderBuy.sells))
                 .where(OrderBuy.to_token_id == token_id)
                 .order_by(OrderBuy.created.desc())
+                .limit(limit)
+                .offset(offset)
             )
             result = await self.session.execute(stmt)
             orders = list(result.scalars().all())
