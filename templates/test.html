@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block head %}{{ super() }}{% endblock %}
+{% block content %}
+    <button type="button"
+            class="w-40 px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled>Disabled Button</button>
+    <button type="button"
+            class="w-40 px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600">
+        Active Button
+    </button>
+{% endblock %}

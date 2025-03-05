@@ -220,9 +220,6 @@ function updatePriceDisplay(currentPrice) {
     }
 
     previousPrice = currentPrice
-
-    const buyButton = document.getElementById('buy-button')
-    buyButton.disabled = false
 }
 function updateChart() {
     const tokenSelect = document.getElementById('token-select')
@@ -232,12 +229,10 @@ function updateChart() {
     } else if (selectedToken) {
         renderChart()
         renderPairSettings()
-        document.getElementById('buy-button').disabled = false
     } else {
         document.getElementById('priceChart').style.display = 'none'
         document.getElementById('price-container').style.display = 'none'
         document.getElementById('buttons-container').style.display = 'none'
-        document.getElementById('buy-button').disabled = true
     }
 }
 
@@ -262,9 +257,11 @@ async function renderTable(currentPrice, orders_data) {
         const tr = document.createElement('tr')
         const sellButton =
             row.sells.length === 0
-                ? `<button class="bg-red-500 text-white px-2 py-1 rounded"
+                ? `<button class="bg-red-500 text-white px-2 py-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+            id="sell-order-id-${row.id}"
             hx-post="${ORDERS_ENDPOINT}/sell"
-            hx-ext='json-enc'
+            hx-ext='json-enc, disable-element'
+            hx-disable-element="#sell-order-id-${row.id}"
             hx-include="#order-id-${row.id}, #amount-id-${row.id}, #token-select, #current-price-value"
             hx-target="#message">SELL</button>`
                 : 'CLOSED'
@@ -372,10 +369,9 @@ function startAutoUpdate() {
     }, 5000)
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    startAutoUpdate()
-})
 document.addEventListener('DOMContentLoaded', () => {
+    startAutoUpdate()
+
     const collapsibleButton = document.querySelector('.collapsible')
     const content = document.querySelector('.content')
 

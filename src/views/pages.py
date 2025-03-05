@@ -30,3 +30,11 @@ async def read_add_token(request: Request):
         "add_token.html",
         {"request": request, "active_tab": "add-token"},
     )
+
+
+@router.get("/test", response_class=HTMLResponse, include_in_schema=False)
+async def read_test(request: Request):
+    return templates.TemplateResponse(
+        "test.html",
+        {"request": request},
+    )
