@@ -12,6 +12,8 @@ let previousPrice = null
 let currentPrice = null
 let tradingSettings = {}
 let tradingPairs = {}
+let ordersOffset = 0
+let ordersLimit = 10
 
 async function loadTokens() {
     const data = await fetchPairs()
@@ -24,7 +26,12 @@ async function loadTokens() {
         tokenSelect.appendChild(option)
     })
 }
+async function loadMoreOrders(token_id) {
+    ordersLimit += ordersLimit
+    const orders_data = await fetchOrders(token_id)
 
+    await renderTable(currentPrice, orders_data)
+}
 async function fetchPairs() {
     const response = await fetch(`${PAIRS_API_ENDPOINT}`)
     if (response.status !== 200) {
@@ -43,14 +50,17 @@ async function fetchPairs() {
     return data
 }
 async function fetchPrices(token_id) {
-    const response = await fetch(`${PRICES_ENDPOINT}/${token_id}`)
+    const response = await fetch(
+        `${PRICES_ENDPOINT}/${token_id}`,
+    )
     if (response.status !== 200) {
         return []
     }
     return await response.json()
 }
 async function fetchOrders(token_id) {
-    const response = await fetch(`${ORDERS_ENDPOINT}/${token_id}`)
+    console.log(ordersOffset)
+    const response = await fetch(`${ORDERS_ENDPOINT}/${token_id}?limit=${ordersLimit}&offset=${ordersOffset}`)
     if (response.status !== 200) {
         return []
     }
@@ -64,7 +74,7 @@ async function renderChart() {
     const data = await fetchPrices(selectedToken)
     const orders_data = await fetchOrders(selectedToken)
 
-    const currentPrice = data.prices[data.prices.length - 1]
+    currentPrice = data.prices[data.prices.length - 1]
     const ctx = document.getElementById('priceChart').getContext('2d')
 
     updatePriceDisplay(currentPrice)
@@ -100,7 +110,7 @@ async function renderChart() {
                 label: `Price ${tradingPairs[selectedToken].from_token} / ${tradingPairs[selectedToken].to_token}`,
                 data: data.prices,
                 order: 2,
-                borderColor: 'rgba(75, 192, 192, 1)',
+                borderColor: 'rgba(0, 201, 81, 1)',
                 borderWidth: 1,
                 radius: 0,
                 fill: false,
