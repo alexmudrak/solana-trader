@@ -165,6 +165,8 @@ async def sell_tokens(
 )
 async def get_orders(
     pair_id: int,
+    limit: int = 10,
+    offset: int = 0,
     db_session: AsyncSession = Depends(get_session),
 ):
     order_buy_repository = OrderBuyRepository(db_session)
@@ -179,6 +181,8 @@ async def get_orders(
     token_id = pair.to_token.id
     result = await order_buy_repository.get_orders_for_token(
         token_id,
+        limit,
+        offset,
     )
 
     if not result:
