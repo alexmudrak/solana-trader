@@ -257,8 +257,6 @@ async function renderTable(currentPrice, orders_data) {
     const tbody = document.getElementById('data-body')
     tbody.innerHTML = ''
 
-    let totalProfit = 0
-
     orders_data.forEach((row) => {
         const tr = document.createElement('tr')
         const sellButton =
@@ -278,8 +276,6 @@ async function renderTable(currentPrice, orders_data) {
             row.sells.length > 0
                 ? lastSellPrice * row.amount - row.price * row.amount
                 : currentPrice * row.amount - row.price * row.amount
-
-        totalProfit += profit
 
         tr.innerHTML = `
             <td class="border-b px-4 py-2">${new Date(row.created).toLocaleString()}</td>
@@ -310,8 +306,6 @@ async function renderTable(currentPrice, orders_data) {
         tbody.appendChild(tr)
         htmx.process(tbody)
     })
-    const profitDisplay = document.getElementById('total-profit')
-    profitDisplay.textContent = `Total Profit: $${totalProfit.toFixed(2)}`
 }
 
 async function renderPairSettings() {
