@@ -1,7 +1,7 @@
 # Solana Trader
 
 <p align="center">
-    <img width="300" height="300" src="media/logo.png" />
+    <img width="300" height="300" src="media/logo.jpg" alt="Solana Trader Logo" />
 </p>
 
 <hr />
@@ -15,15 +15,14 @@ project is from **USDC to other tokens**.
 ## Features
 
 <p align="center">
-    <img width="800" height="600" src="media/chart.png" />
+    <img width="600" src="media/chart.png" alt="Trading Chart" />
 </p>
 
 <hr />
 
 - Auto trade between USDC and various tokens on the Jupiter DEX.
 - Analyze market conditions using technical indicators such as
-EMA (Exponentia
-l Moving Average) and RSI (Relative Strength Index).
+EMA (Exponential Moving Average) and RSI (Relative Strength Index).
 - Monitor open orders and perform transactions.
 
 ## Installation
@@ -37,16 +36,28 @@ l Moving Average) and RSI (Relative Strength Index).
 2. Navigate to the project directory:
 
    ```bash
-   cd trading-service
+   cd solana_trader
    ```
 
-3. Run docker container:
+3. Copy `.env.example` to `.env` and set the required environment variables:
+
+   **MANDATORY**
+   ```bash
+   # Solana Settings
+   APP_SOLANA_PRIVATE_KEY=
+
+   # Notification config
+   APP_TELEGRAM_BOT=
+   APP_TELEGRAM_ADMIN=
+   ```
+
+4. Run the Docker container:
 
    ```bash
    docker-compose up --build
    ```
 
-4. Navigate to UI
+5. Access the UI at:
 
    ```
    http://localhost:8000
@@ -54,27 +65,27 @@ l Moving Average) and RSI (Relative Strength Index).
 
 ## Usage
 
-1. For first ADD USDC token at `http://localhost:8000/add-token` and other one.
-2. Create and select a trading pair `http://localhost:8000/create-pair`.
-2. Setup trading settings and check if enable auto buy/sell.
-4. Enjoy it.
+1. First, add the USDC token at `http://localhost:8000/add-token` and any
+other tokens you want to trade.
+2. Create and select a trading pair at `http://localhost:8000/create-pair`.
+3. Set up your trading settings and check whether auto buy/sell is enabled.
 
 ## Warning
 
 **This project is for educational purposes only.** It does not guarantee
-profit from trading activities. Please do your own research and be aware
-of the risks involved in trading cryptocurrencies.
+profit from trading activities. Please do your own research and be aware of
+the risks involved in trading cryptocurrencies.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE)
 file for details.
 
-## Tech stack
+## Tech Stack
 
-| Backend | Frontend |
-|---------|----------|
-| FastAPI | HTMX |
-| SqlLite | JavaScript |
+| Backend   | Frontend   |
+|-----------|------------|
+| FastAPI   | HTMX       |
+| SQLite    | JavaScript  |
 
-Enjoy ;)
+Enjoy trading! 😉
