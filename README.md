@@ -1,7 +1,7 @@
 # Solana Trader
 
 <p align="center">
-    <img width="300" height="300" src="media/logo.jpg" alt="Solana Trader Logo" />
+    <img width="200" src="media/logo.jpg" alt="Solana Trader Logo" />
 </p>
 
 <hr />
@@ -30,13 +30,13 @@ EMA (Exponential Moving Average) and RSI (Relative Strength Index).
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/alexmudrak/solana_trader
+   git clone https://github.com/alexmudrak/solana-trader
    ```
 
 2. Navigate to the project directory:
 
    ```bash
-   cd solana_trader
+   cd solana-trader
    ```
 
 3. Copy `.env.example` to `.env` and set the required environment variables:
