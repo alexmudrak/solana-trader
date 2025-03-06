@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: "."
+      APP_DEBUG: false
+      APP_LOG_LEVEL: "INFO"
+      APP_SOLANA_RPC_URL: "https://api.mainnet-beta.solana.com"
+      APP_DB_URL: "sqlite+aiosqlite:///./db_data/solana_trade.db"
+    volumes:
+      - ./db_data:/app/db_data
+
+volumes:
+  db_data:

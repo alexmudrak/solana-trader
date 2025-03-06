@@ -95,21 +95,21 @@ async def run_background_processes():
     trade_indicators = TradeIndicators()
 
     while True:
-        async for session in get_session():
-            pairs_repository = PairsRepository(session)
-            all_active_pairs = await pairs_repository.get_pairs(
-                only_active=True
-            )
         try:
-            await get_latest_price(
-                market_service,
-                all_active_pairs,
-            )
-            await trade_execution(
-                transaction_service,
-                trade_indicators,
-                all_active_pairs,
-            )
+            async for session in get_session():
+                pairs_repository = PairsRepository(session)
+                all_active_pairs = await pairs_repository.get_pairs(
+                    only_active=True
+                )
+                await get_latest_price(
+                    market_service,
+                    all_active_pairs,
+                )
+                await trade_execution(
+                    transaction_service,
+                    trade_indicators,
+                    all_active_pairs,
+                )
         except Exception as e:
             exception = sys.exc_info()
             logger.opt(exception=exception).error(

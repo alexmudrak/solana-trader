@@ -2,6 +2,7 @@ import sys
 
 from loguru import logger
 
+from core.settings import settings
 from services.notification_service import notifier
 
 
@@ -17,7 +18,7 @@ def setup_logger():
 
     logger.add(
         sys.stderr,
-        level="DEBUG",
+        level=settings.app_log_level,
         format="<light-black>{time:YYYY-MM-DD at HH:mm:ss}</light-black> | "
         "<level>{level: <8}</level> | "
         "<cyan>{message}</cyan>",

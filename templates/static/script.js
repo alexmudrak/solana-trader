@@ -231,9 +231,8 @@ function updateChart() {
     const tokenSelect = document.getElementById('token-select')
     selectedToken = tokenSelect.value
     if (selectedToken === 'create-new-trader') {
-        window.location.href = '/create-trader'
+        window.location.href = '/create-pair'
     } else if (selectedToken) {
-        console.log(document)
         document.getElementById('chart-content').style.display = 'block'
         renderChart()
         renderPairSettings()

@@ -171,3 +171,4 @@ cython_debug/
 .pypirc
 wallet_keypair.json
 *.db
+db_data
